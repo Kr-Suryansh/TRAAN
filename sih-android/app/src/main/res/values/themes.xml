@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose handles theming; only the activity window style needed here -->
+    <style name="Theme.SihAndroid" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
