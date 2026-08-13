@@ -178,6 +178,8 @@ async def update_resource(
         raise HTTPException(status_code=404, detail="Resource not found")
         
     if update_data.quantity_available is not None:
+        if update_data.quantity_available > db_resource.quantity_total:
+            raise HTTPException(status_code=400, detail="quantity_available cannot exceed quantity_total")
         db_resource.quantity_available = update_data.quantity_available
     if update_data.status is not None:
         db_resource.status = update_data.status

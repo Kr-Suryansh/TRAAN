@@ -32,3 +32,17 @@ class SOSStatus(str, Enum):
     pending_local = "pending_local"
     in_relay = "in_relay"
     uploaded = "uploaded"
+
+
+class IncidentStatus(str, Enum):
+    new = "new"
+    acknowledged = "acknowledged"
+    dispatched = "dispatched"
+    resolved = "resolved"
+
+
+class ResourceStatus(str, Enum):
+    available = "available"
+    partially_deployed = "partially_deployed"
+    deployed = "deployed"
+    maintenance = "maintenance"

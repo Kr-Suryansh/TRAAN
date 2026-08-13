@@ -197,3 +197,32 @@ async def test_get_sos_status_not_found(client: AsyncClient, device_token: str):
     headers = {"Authorization": f"Bearer {device_token}"}
     response = await client.get(f"/api/v1/sos/{uuid.uuid4()}/status", headers=headers)
     assert response.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Regression Tests: Input Validation
+# ---------------------------------------------------------------------------
+
+async def test_sos_batch_invalid_uuid(client: AsyncClient, device_token: str):
+    payload = make_batch_payload([make_sos_item("not-a-uuid")])
+    headers = {"Authorization": f"Bearer {device_token}"}
+    response = await client.post("/api/v1/sos/batch", json=payload, headers=headers)
+    assert response.status_code == 422
+
+
+async def test_sos_batch_invalid_location(client: AsyncClient, device_token: str):
+    item = make_sos_item()
+    item["location"]["lat"] = 100.0  # Invalid, max is 90
+    payload = make_batch_payload([item])
+    headers = {"Authorization": f"Bearer {device_token}"}
+    response = await client.post("/api/v1/sos/batch", json=payload, headers=headers)
+    assert response.status_code == 422
+
+
+async def test_sos_batch_negative_people_count(client: AsyncClient, device_token: str):
+    item = make_sos_item()
+    item["people_count"] = -1
+    payload = make_batch_payload([item])
+    headers = {"Authorization": f"Bearer {device_token}"}
+    response = await client.post("/api/v1/sos/batch", json=payload, headers=headers)
+    assert response.status_code == 422

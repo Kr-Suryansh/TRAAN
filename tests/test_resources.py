@@ -160,3 +160,71 @@ async def test_update_resource(client: AsyncClient, admin_token, cleanup_phase4_
     data = patch_resp.json()
     assert data["quantity_available"] == 8
     assert data["status"] == "partially_deployed"
+
+
+# ---------------------------------------------------------------------------
+# Regression Tests: Input Validation
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_resource_patch_negative_quantity(client: AsyncClient, admin_token, cleanup_phase4_data):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    payload = {
+        "category": "transport",
+        "sub_type": "bus",
+        "custodian_agency": "KSRTC",
+        "quantity_total": 10,
+        "quantity_available": 10,
+        "status": "available",
+        "contact": "111222333",
+        "location": {"lat": 12.0, "lng": 77.0, "district": "Mysuru"}
+    }
+    create_resp = await client.post("/api/v1/resources", json=payload, headers=headers)
+    resource_id = create_resp.json()["resource_id"]
+    
+    patch_payload = {"quantity_available": -5}
+    patch_resp = await client.patch(f"/api/v1/resources/{resource_id}", json=patch_payload, headers=headers)
+    assert patch_resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_resource_patch_quantity_exceeds_total(client: AsyncClient, admin_token, cleanup_phase4_data):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    payload = {
+        "category": "transport",
+        "sub_type": "bus",
+        "custodian_agency": "KSRTC",
+        "quantity_total": 10,
+        "quantity_available": 10,
+        "status": "available",
+        "contact": "111222333",
+        "location": {"lat": 12.0, "lng": 77.0, "district": "Mysuru"}
+    }
+    create_resp = await client.post("/api/v1/resources", json=payload, headers=headers)
+    resource_id = create_resp.json()["resource_id"]
+    
+    patch_payload = {"quantity_available": 15}
+    patch_resp = await client.patch(f"/api/v1/resources/{resource_id}", json=patch_payload, headers=headers)
+    assert patch_resp.status_code == 400
+    assert "quantity_available cannot exceed quantity_total" in patch_resp.text
+
+
+@pytest.mark.asyncio
+async def test_resource_patch_invalid_status(client: AsyncClient, admin_token, cleanup_phase4_data):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    payload = {
+        "category": "transport",
+        "sub_type": "bus",
+        "custodian_agency": "KSRTC",
+        "quantity_total": 10,
+        "quantity_available": 10,
+        "status": "available",
+        "contact": "111222333",
+        "location": {"lat": 12.0, "lng": 77.0, "district": "Mysuru"}
+    }
+    create_resp = await client.post("/api/v1/resources", json=payload, headers=headers)
+    resource_id = create_resp.json()["resource_id"]
+    
+    patch_payload = {"status": "invalid_status"}
+    patch_resp = await client.patch(f"/api/v1/resources/{resource_id}", json=patch_payload, headers=headers)
+    assert patch_resp.status_code == 422

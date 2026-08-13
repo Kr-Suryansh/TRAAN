@@ -36,7 +36,7 @@ async def upload_sos_batch(
         return BatchResponse(accepted_uuids=[], duplicate_uuids=[])
 
     # 1. Exact UUID Match
-    incoming_uuids = [report.uuid for report in payload.sos_batch]
+    incoming_uuids = [str(report.uuid) for report in payload.sos_batch]
     result = await db.execute(
         select(SOSReport.uuid).where(SOSReport.uuid.in_(incoming_uuids))
     )
@@ -60,8 +60,9 @@ async def upload_sos_batch(
     """)
 
     for report in payload.sos_batch:
-        if report.uuid in existing_uuids:
-            duplicate_uuids.append(report.uuid)
+        report_uuid_str = str(report.uuid)
+        if report_uuid_str in existing_uuids:
+            duplicate_uuids.append(report_uuid_str)
             continue
             
         # Check near duplicate
@@ -69,7 +70,7 @@ async def upload_sos_batch(
             "lng": report.location.lng,
             "lat": report.location.lat,
             "dist_m": settings.DEDUPLICATION_DISTANCE_M,
-            "incoming_uuid": report.uuid,
+            "incoming_uuid": report_uuid_str,
             "created_at": report.created_at,
             "time_window_sec": settings.DEDUPLICATION_TIME_WINDOW_MINUTES * 60
         })
@@ -77,14 +78,14 @@ async def upload_sos_batch(
         
         if near_dup:
             # We consider this a duplicate
-            duplicate_uuids.append(report.uuid)
+            duplicate_uuids.append(report_uuid_str)
             continue
             
         # Accept the report
-        accepted_uuids.append(report.uuid)
+        accepted_uuids.append(report_uuid_str)
         
         new_report = SOSReport(
-            uuid=report.uuid,
+            uuid=report_uuid_str,
             device_id=report.device_id,
             created_at=report.created_at,
             location=f"SRID=4326;POINT({report.location.lng} {report.location.lat})",

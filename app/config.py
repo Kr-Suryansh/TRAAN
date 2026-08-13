@@ -5,7 +5,9 @@ All settings are read from environment variables (or the .env file).
 Never hardcode secrets here — use .env.example as the reference.
 """
 
+from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import model_validator
 
 
 class Settings(BaseSettings):
@@ -24,6 +26,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "SIH Disaster Response API"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
+    CORS_ORIGINS: List[str] = ["*"]
 
     # ── JWT ─────────────────────────────────────────────────────────────────────
     # Used in Phase 2 (auth implementation). Stored here so the env var is
@@ -45,7 +48,14 @@ class Settings(BaseSettings):
     # ── Clustering tuning (Phase 3) ─────────────────────────────────────────────
     # ST_ClusterDBSCAN eps in degrees for EPSG:4326 geometry (~111 meters per 0.001 degree at equator)
     DBSCAN_EPS: float = 0.001
+    DBSCAN_EPS: float = 0.001
     DBSCAN_MINPOINTS: int = 1
+
+    @model_validator(mode='after')
+    def check_jwt_secret(self) -> 'Settings':
+        if not self.DEBUG and self.JWT_SECRET_KEY == "dev-only-change-before-production":
+            raise ValueError("JWT_SECRET_KEY must be changed from the default in production (DEBUG=False).")
+        return self
 
 
 settings = Settings()

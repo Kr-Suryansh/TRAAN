@@ -2,6 +2,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from datetime import datetime
 from typing import Optional, Literal
+from app.models.common import ResourceStatus
 
 class Location(BaseModel):
     lat: float = Field(..., ge=-90.0, le=90.0)
@@ -14,7 +15,7 @@ class ResourceBase(BaseModel):
     custodian_agency: str
     quantity_total: int = Field(..., ge=0)
     quantity_available: int = Field(..., ge=0)
-    status: Literal["available", "partially_deployed", "deployed", "maintenance"]
+    status: ResourceStatus
     contact: str
     
     @model_validator(mode='after')
@@ -27,8 +28,8 @@ class ResourceCreate(ResourceBase):
     location: Location
 
 class ResourceUpdate(BaseModel):
-    quantity_available: Optional[int] = None
-    status: Optional[str] = None
+    quantity_available: Optional[int] = Field(None, ge=0)
+    status: Optional[ResourceStatus] = None
 
 class ResourceResponse(ResourceBase):
     resource_id: str

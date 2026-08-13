@@ -2,6 +2,7 @@ from typing import Optional, List, Any
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
 from app.models.sos import Location
+from app.models.common import IncidentStatus
 
 class IncidentFlags(BaseModel):
     medical_emergency: bool
@@ -22,7 +23,7 @@ class IncidentBase(BaseModel):
     report_count: int
     estimated_people_affected: Optional[int] = None
     flags: IncidentFlags
-    status: str
+    status: IncidentStatus
     recommended_resources: Optional[List[Recommendation]] = None
     assigned_resources: Optional[List[str]] = None
 
@@ -37,7 +38,7 @@ class IncidentResponse(IncidentBase):
     model_config = ConfigDict(from_attributes=True)
 
 class IncidentStatusUpdate(BaseModel):
-    status: str
+    status: IncidentStatus
 
 class PaginatedIncidentsResponse(BaseModel):
     items: List[IncidentResponse]

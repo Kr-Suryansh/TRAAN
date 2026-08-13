@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, UUID4
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 
@@ -12,7 +12,7 @@ class Location(BaseModel):
 
 
 class SOSRequest(BaseModel):
-    uuid: str
+    uuid: UUID4
     device_id: str
     created_at: datetime
     location: Location
@@ -36,8 +36,8 @@ class BatchUpload(BaseModel):
 
 
 class BatchResponse(BaseModel):
-    accepted_uuids: List[str]
-    duplicate_uuids: List[str]
+    accepted_uuids: List[UUID4]
+    duplicate_uuids: List[UUID4]
 
 
 class SOSStatusResponse(BaseModel):
