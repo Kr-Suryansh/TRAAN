@@ -411,7 +411,8 @@ None. All implemented endpoints follow the authoritative Master Prompt / Day 1 c
 
 - **Phase 1-5**: COMPLETED.
 - **Component D Audit Remediation**: COMPLETED. (Included `last_seen_at` on Device, `name`/`agency` on Authority, paginated `/api/v1/incidents`, stringent security rules on SOS Gateway & Admin routes, and validation schemas).
-- **Tests**: 35/35 passing.
+- **Component D Forensic Audit Remediation**: COMPLETED. (Consolidated DB schemas, resolved spatial array overlaps with UUIDs, fixed incident PATCH route, complete 41-test suite passing including full e2e smoke test).
+- **Tests**: 41/41 passing.
 
 The Backend Core (Component D) is fully 100% verified and ready for Component E integration.
 

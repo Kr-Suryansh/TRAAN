@@ -159,3 +159,12 @@ docker compose up --build -d
 - Updated Pydantic validation schemas with `Field` constraints (e.g. `ge`, `le` for coordinates and strictly positive numbers for people counts).
 - Updated `Recommendation` schema to use `resource_type` instead of `resource_id`.
 - Rewrote test assertions to pass with the updated validation logic and database fields, ensuring 100% test passing locally.
+
+### Component D Forensic Audit Remediation
+
+- Consolidated all Alembic migrations into a single hardened `initial_schema` to ensure a clean PostGIS setup from scratch and eliminate implicit spatial index collisions.
+- Refactored `app/routers/sos.py` to correctly cast Pydantic `uuid.UUID` objects to strings, resolving the PostgreSQL `UndefinedFunctionError` during spatial array overlap queries.
+- Corrected the incident status update route to `PATCH /api/v1/incidents/{incident_id}/status`, fully aligning with the Day 1 API contract.
+- Hardened database and Pydantic constraints across models (UUID validations, non-negative integer limits, strict Enum mapping for statuses).
+- Created `tests/test_smoke.py` to validate the full end-to-end incident lifecycle (Auth → SOS Batch → Clustering → Dispatch → Incident Patching).
+- Re-ran the complete pytest regression suite (41 tests passing) and verified the live `/openapi.json` contract matches the master specification.

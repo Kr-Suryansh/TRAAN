@@ -165,9 +165,9 @@ Do not change endpoint paths or methods without informing the team.
 
 | Method | Endpoint | Authentication | Notes |
 |---|---|---|---|
-| GET | `/api/v1/incidents` | Authority JWT | Query params: `bbox`, `severity`, `status`, `since`, `page`, `size`. Returns paginated list. |
-| GET | `/api/v1/incidents/{incident_id}` | Authority JWT | Full incident detail. `assigned_resources` is a list of resource IDs. `recommended_resources` contains `{resource_type, quantity, reasoning}`. `source_sos_reports` contains full nested objects. |
-| PATCH | `/api/v1/incidents/{incident_id}` | Authority JWT | Update status. Emits `incident_updated` WS event. |
+| GET | `/api/v1/incidents` | Authority JWT | Fetch incidents (supports `status` filter and `page`/`size` pagination) |
+| GET | `/api/v1/incidents/{incident_id}` | Authority JWT | Get details, including source `SOSReport`s. |
+| PATCH | `/api/v1/incidents/{incident_id}/status` | Authority JWT | Update status. Emits `incident_updated` WS event. |
 | GET | `/api/v1/incidents/{incident_id}/recommendations` | Authority JWT | AI boundary stub. Returns recommended resources. |
 | POST | `/api/v1/incidents/{incident_id}/dispatch` | Authority JWT | Creates DispatchRecord, updates Resource qty safely (row-locked). Emits WS events. |
 | POST | `/api/v1/incidents/{incident_id}/refresh-summary` | Authority JWT | AI boundary stub. |
