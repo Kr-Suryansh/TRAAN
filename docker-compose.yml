@@ -1,0 +1,64 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# SIH 2026 — Disaster Response Coordination Platform
+# Backend service + PostGIS database
+#
+# Usage:
+#   docker compose up --build          # start everything
+#   docker compose up --build -d       # detached
+#   docker compose down -v             # stop + delete volumes
+# ──────────────────────────────────────────────────────────────────────────────
+
+services:
+  # ── PostGIS database ─────────────────────────────────────────────────────────
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sih}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sih_dev_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-sih_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-sih} -d ${POSTGRES_DB:-sih_db}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ── FastAPI backend ───────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Override DATABASE_URL so the API uses the Docker service name "db"
+      # rather than whatever is in .env (which may say "localhost")
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-sih}:${POSTGRES_PASSWORD:-sih_dev_secret}@db:5432/${POSTGRES_DB:-sih_db}
+      APP_NAME: ${APP_NAME:-SIH Disaster Response API}
+      APP_VERSION: ${APP_VERSION:-0.1.0}
+      DEBUG: ${DEBUG:-true}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-only-change-before-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      DEVICE_JWT_EXPIRE_MINUTES: ${DEVICE_JWT_EXPIRE_MINUTES:-43200}
+      AUTHORITY_JWT_EXPIRE_MINUTES: ${AUTHORITY_JWT_EXPIRE_MINUTES:-60}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Mount source for hot-reload during development
+      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
