@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "SIH Disaster Response API"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
-    CORS_ORIGINS: List[str] = ["*"]
+    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
     # ── JWT ─────────────────────────────────────────────────────────────────────
     # Used in Phase 2 (auth implementation). Stored here so the env var is
@@ -47,7 +47,6 @@ class Settings(BaseSettings):
 
     # ── Clustering tuning (Phase 3) ─────────────────────────────────────────────
     # ST_ClusterDBSCAN eps in degrees for EPSG:4326 geometry (~111 meters per 0.001 degree at equator)
-    DBSCAN_EPS: float = 0.001
     DBSCAN_EPS: float = 0.001
     DBSCAN_MINPOINTS: int = 1
 

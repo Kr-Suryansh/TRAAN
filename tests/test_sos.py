@@ -226,3 +226,52 @@ async def test_sos_batch_negative_people_count(client: AsyncClient, device_token
     headers = {"Authorization": f"Bearer {device_token}"}
     response = await client.post("/api/v1/sos/batch", json=payload, headers=headers)
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_sos_same_batch_deduplication(client: AsyncClient, device_token: str, cleanup_sos_data):
+    # Test A: Two different UUIDs in SAME batch, same location, within time window -> one accepted, one duplicate
+    uuid1 = str(uuid.uuid4())
+    uuid2 = str(uuid.uuid4())
+    item1 = make_sos_item(uuid1, lat=10.0, lng=20.0)
+    item2 = make_sos_item(uuid2, lat=10.0, lng=20.0)
+    payload_a = make_batch_payload([item1, item2])
+    
+    headers = {"Authorization": f"Bearer {device_token}"}
+    res_a = await client.post("/api/v1/sos/batch", json=payload_a, headers=headers)
+    assert res_a.status_code == 202
+    assert len(res_a.json()["accepted_uuids"]) == 1
+    assert len(res_a.json()["duplicate_uuids"]) == 1
+
+    # Test B: Two different UUIDs in SAME batch, same location, outside time window -> both accepted
+    uuid3 = str(uuid.uuid4())
+    uuid4 = str(uuid.uuid4())
+    item3 = make_sos_item(uuid3, lat=11.0, lng=21.0)
+    dt_future = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=30)
+    item4 = make_sos_item(uuid4, lat=11.0, lng=21.0, created_at=dt_future.isoformat())
+    payload_b = make_batch_payload([item3, item4])
+    
+    res_b = await client.post("/api/v1/sos/batch", json=payload_b, headers=headers)
+    assert len(res_b.json()["accepted_uuids"]) == 2
+    assert len(res_b.json()["duplicate_uuids"]) == 0
+
+    # Test C: Two different UUIDs in SAME batch, outside spatial distance -> both accepted
+    uuid5 = str(uuid.uuid4())
+    uuid6 = str(uuid.uuid4())
+    item5 = make_sos_item(uuid5, lat=12.0, lng=22.0)
+    item6 = make_sos_item(uuid6, lat=12.1, lng=22.1) # far away
+    payload_c = make_batch_payload([item5, item6])
+    
+    res_c = await client.post("/api/v1/sos/batch", json=payload_c, headers=headers)
+    assert len(res_c.json()["accepted_uuids"]) == 2
+    assert len(res_c.json()["duplicate_uuids"]) == 0
+
+    # Test D: Exact UUID duplicate in SAME batch -> one accepted, one duplicate
+    uuid7 = str(uuid.uuid4())
+    item7a = make_sos_item(uuid7, lat=13.0, lng=23.0)
+    item7b = make_sos_item(uuid7, lat=13.0, lng=23.0)
+    payload_d = make_batch_payload([item7a, item7b])
+    
+    res_d = await client.post("/api/v1/sos/batch", json=payload_d, headers=headers)
+    assert len(res_d.json()["accepted_uuids"]) == 1
+    assert len(res_d.json()["duplicate_uuids"]) == 1

@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.engine import get_db
 from app.core.security import require_authority_jwt
+from app.ws.manager import manager as ws_manager
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -38,6 +40,11 @@ async def refresh_situation_brief(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required"
         )
+        
+    brief_text = "AI Situation Brief Stub: 0 active incidents."
+    updated_at = datetime.utcnow().isoformat()
+    await ws_manager.broadcast_event("situation_brief_updated", {"text": brief_text, "updated_at": updated_at})
+    
     return {"status": "refresh_queued"}
 
 @router.post("/optimize/allocate")

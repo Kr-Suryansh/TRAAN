@@ -146,7 +146,7 @@ async def get_incident(
         raise HTTPException(status_code=404, detail="Incident not found")
     return await _build_incident_response(row, db)
 
-@router.patch("/{incident_id}/status", response_model=IncidentResponse)
+@router.patch("/{incident_id}", response_model=IncidentResponse)
 async def update_incident(
     incident_id: str,
     update_data: IncidentStatusUpdate,

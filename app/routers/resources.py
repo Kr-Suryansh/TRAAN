@@ -170,7 +170,7 @@ async def update_resource(
     """
     Update a resource (e.g. quantity or status). Authority only.
     """
-    stmt = select(Resource).where(Resource.resource_id == resource_id)
+    stmt = select(Resource).where(Resource.resource_id == resource_id).with_for_update()
     result = await db.execute(stmt)
     db_resource = result.scalars().first()
     
@@ -178,6 +178,8 @@ async def update_resource(
         raise HTTPException(status_code=404, detail="Resource not found")
         
     if update_data.quantity_available is not None:
+        if update_data.quantity_available < 0:
+            raise HTTPException(status_code=400, detail="quantity_available cannot be negative")
         if update_data.quantity_available > db_resource.quantity_total:
             raise HTTPException(status_code=400, detail="quantity_available cannot exceed quantity_total")
         db_resource.quantity_available = update_data.quantity_available

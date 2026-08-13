@@ -59,13 +59,35 @@ async def upload_sos_batch(
         LIMIT 1
     """)
 
+    import math
+    accepted_reports_metadata = []
+
     for report in payload.sos_batch:
         report_uuid_str = str(report.uuid)
         if report_uuid_str in existing_uuids:
             duplicate_uuids.append(report_uuid_str)
             continue
             
-        # Check near duplicate
+        is_batch_duplicate = False
+        for acc in accepted_reports_metadata:
+            if report_uuid_str == acc["uuid"]:
+                is_batch_duplicate = True
+                break
+            time_diff = abs((report.created_at - acc["created_at"]).total_seconds())
+            if time_diff <= settings.DEDUPLICATION_TIME_WINDOW_MINUTES * 60:
+                lat1, lon1 = math.radians(report.location.lat), math.radians(report.location.lng)
+                lat2, lon2 = math.radians(acc["lat"]), math.radians(acc["lng"])
+                a = math.sin((lat2-lat1)/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin((lon2-lon1)/2)**2
+                dist_m = 6371000 * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+                if dist_m <= settings.DEDUPLICATION_DISTANCE_M:
+                    is_batch_duplicate = True
+                    break
+                    
+        if is_batch_duplicate:
+            duplicate_uuids.append(report_uuid_str)
+            continue
+
+        # Check near duplicate in DB
         res = await db.execute(near_dup_query, {
             "lng": report.location.lng,
             "lat": report.location.lat,
@@ -83,6 +105,12 @@ async def upload_sos_batch(
             
         # Accept the report
         accepted_uuids.append(report_uuid_str)
+        accepted_reports_metadata.append({
+            "uuid": report_uuid_str,
+            "lat": report.location.lat,
+            "lng": report.location.lng,
+            "created_at": report.created_at
+        })
         
         new_report = SOSReport(
             uuid=report_uuid_str,

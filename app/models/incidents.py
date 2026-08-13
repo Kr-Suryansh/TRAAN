@@ -1,14 +1,21 @@
 from typing import Optional, List, Any
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
-from app.models.sos import Location
+from app.models.sos import Location, SOSRequest
 from app.models.common import IncidentStatus
+from enum import Enum
 
 class IncidentFlags(BaseModel):
     medical_emergency: bool
     trapped: bool
     elderly_or_children: bool
     structural_damage: bool
+
+class IncidentSeverity(str, Enum):
+    critical = "critical"
+    high = "high"
+    medium = "medium"
+    low = "low"
 
 class Recommendation(BaseModel):
     resource_type: str
@@ -18,7 +25,7 @@ class Recommendation(BaseModel):
 class IncidentBase(BaseModel):
     area_name: Optional[str] = None
     emergency_types: List[str]
-    severity: str
+    severity: IncidentSeverity
     ai_summary: Optional[str] = None
     report_count: int
     estimated_people_affected: Optional[int] = None
@@ -30,7 +37,7 @@ class IncidentBase(BaseModel):
 class IncidentResponse(IncidentBase):
     incident_id: str
     cluster_id: str
-    source_sos_reports: List[Any]
+    source_sos_reports: List[SOSRequest]
     location: Location
     first_reported_at: datetime
     last_updated_at: datetime
@@ -50,6 +57,12 @@ class DispatchRequest(BaseModel):
     resource_id: str
     quantity: int
 
+class DispatchStatus(str, Enum):
+    dispatched = "dispatched"
+    en_route = "en_route"
+    arrived = "arrived"
+    completed = "completed"
+
 class DispatchResponse(BaseModel):
     dispatch_id: str
     incident_id: str
@@ -58,6 +71,6 @@ class DispatchResponse(BaseModel):
     dispatched_by: str
     dispatched_at: datetime
     eta_minutes: Optional[int] = None
-    status: str
+    status: DispatchStatus
     
     model_config = ConfigDict(from_attributes=True)

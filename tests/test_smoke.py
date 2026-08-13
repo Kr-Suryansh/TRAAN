@@ -85,7 +85,7 @@ async def test_end_to_end_smoke(client: AsyncClient, setup_authority, cleanup_ph
     assert disp_resp.status_code == 201
     
     # 7. Update Incident Status
-    patch_resp = await client.patch(f"/api/v1/incidents/{incident_id}/status", json={"status": "acknowledged"}, headers=auth_headers)
+    patch_resp = await client.patch(f"/api/v1/incidents/{incident_id}", json={"status": "acknowledged"}, headers=auth_headers)
     assert patch_resp.status_code == 200
     assert patch_resp.json()["status"] == "acknowledged"
 

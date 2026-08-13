@@ -117,7 +117,7 @@ async def test_update_incident_status(client: AsyncClient, admin_token, cleanup_
     incident_id, _ = await seed_incident_and_resource(client, admin_token)
     
     patch_payload = {"status": "acknowledged"}
-    resp = await client.patch(f"/api/v1/incidents/{incident_id}/status", json=patch_payload, headers=headers)
+    resp = await client.patch(f"/api/v1/incidents/{incident_id}", json=patch_payload, headers=headers)
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "acknowledged"

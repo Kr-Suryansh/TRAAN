@@ -33,9 +33,22 @@ MOCK_RESOURCES = [
 
 async def seed():
     async with SessionLocal() as db:
+        # Use a fixed namespace for deterministic UUID generation
+        NAMESPACE_TRAAN = uuid.uuid5(uuid.NAMESPACE_DNS, "traan.internal")
+        
         for r_data in MOCK_RESOURCES:
+            # Generate deterministic UUID based on agency and type
+            unique_string = f"{r_data['custodian_agency']}-{r_data['sub_type']}-{r_data['district']}"
+            res_id = str(uuid.uuid5(NAMESPACE_TRAAN, unique_string))
+            
+            # Check if it already exists
+            from sqlalchemy import select
+            existing = (await db.execute(select(Resource).where(Resource.resource_id == res_id))).scalar_one_or_none()
+            if existing:
+                continue
+                
             db_res = Resource(
-                resource_id=str(uuid.uuid4()),
+                resource_id=res_id,
                 category=r_data["category"],
                 sub_type=r_data["sub_type"],
                 custodian_agency=r_data["custodian_agency"],
@@ -49,7 +62,7 @@ async def seed():
             )
             db.add(db_res)
         await db.commit()
-        print("Mock IDRN resources seeded successfully!")
+        print("Mock IDRN resources seeded successfully (skipped duplicates)!")
 
 if __name__ == "__main__":
     asyncio.run(seed())
