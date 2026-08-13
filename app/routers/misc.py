@@ -2,7 +2,7 @@
 Miscellaneous endpoints.
 
   GET /api/v1/health       — liveness + DB connectivity check
-  GET /api/v1/stats/summary — (Phase 8) aggregated incident/resource counts
+  GET /api/v1/stats/summary — (Phase 4) aggregated incident/resource counts
 """
 
 import logging
@@ -56,7 +56,7 @@ async def health(db: AsyncSession = Depends(get_db)) -> dict:
     }
 
 
-# ── Stats summary (Phase 8 placeholder) ───────────────────────────────────────
+# ── Stats summary (Phase 4) ───────────────────────────────────────
 
 @router.get(
     "/stats/summary",

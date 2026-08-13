@@ -7,7 +7,7 @@ disaster-management resource information. It is NOT a live IDRN integration.
 Label: "Mock IDRN-style resource registry populated using publicly
         available disaster-management resource information."
 
-Contents (added in Phase 7):
+Contents (added in Phase 4):
   seed.py      — seed script to populate the Resource table with demo data
   helpers.py   — helpers for resource availability queries used by the optimizer
 """
