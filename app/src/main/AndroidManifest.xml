@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        :app application manifest — owned by Component C.
+        Day 1: Minimal stub with a single launcher Activity.
+        Component C will add Jetpack Compose, navigation, and full app configuration here.
+
+        Permissions declared in :relay (Nearby Connections) are automatically merged
+        into this manifest by the Android Gradle Plugin library manifest merger.
+    -->
+
+    <application
+        android:label="SIH Disaster Response"
+        android:theme="@android:style/Theme.DeviceDefault"
+        android:allowBackup="true">
+
+        <!-- Day 1 stub. Component C replaces this with the Compose activity. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

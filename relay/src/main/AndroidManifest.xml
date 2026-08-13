@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Permissions required by Google Nearby Connections API.
+        Declared here in the library manifest so they merge into :app's manifest automatically.
+
+        ANDROID VERSION NOTES:
+        - API < 31  (< Android 12): uses legacy BLUETOOTH + BLUETOOTH_ADMIN
+        - API 31-32 (Android 12):   BLUETOOTH_SCAN / BLUETOOTH_ADVERTISE / BLUETOOTH_CONNECT required
+        - API 33+   (Android 13+):  NEARBY_WIFI_DEVICES replaces some Wi-Fi permissions
+
+        Runtime permission requests (showing rationale to the user) are handled in :relay code
+        starting Day 6. The manifest declarations here are the static declarations that Android
+        requires before runtime requests can even be made.
+
+        IMPORTANT: FOREGROUND_SERVICE is declared here for Day 5 (foreground service + duty cycling).
+        It does not cost battery until the service is actually started.
+    -->
+
+    <!-- Legacy Bluetooth (API < 31) -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
+    <!-- Bluetooth permissions required on Android 12+ (API 31+) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Location — required by Nearby Connections for BLE scanning on all API levels -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Wi-Fi permissions needed by Nearby Connections for Wi-Fi Direct escalation -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
+    <!-- Required on Android 13+ for Wi-Fi Direct via Nearby Connections -->
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES"
+        android:usesPermissionFlags="neverForLocation" />
+
+    <!-- Internet — required by Nearby Connections even for offline P2P -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Foreground Service — required on Day 5 when RelayForegroundService is added -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+
+    <!-- Wake lock — keeps CPU awake during active relay transfers -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+</manifest>

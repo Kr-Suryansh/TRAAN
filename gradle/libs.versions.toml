@@ -1,0 +1,47 @@
+[versions]
+# Android Gradle Plugin
+agp = "8.5.2"
+
+# Kotlin (must be compatible with AGP 8.5.x)
+kotlin = "2.0.0"
+
+# AndroidX
+coreKtx = "1.13.1"
+
+# Google Play Services — Nearby Connections API
+# Used by :relay for phone-to-phone BLE/WiFi-Direct relay
+nearbyConnections = "19.3.0"
+
+# Kotlin Coroutines (Flow used in RelayApi.getRelayStore())
+coroutines = "1.8.1"
+
+# Kotlin Serialization (JSON encoding of SOSRequest/RelayManifest for Nearby Connections payloads)
+kotlinxSerialization = "1.7.1"
+
+# Testing
+junit = "4.13.2"
+
+
+[libraries]
+# AndroidX
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+
+# Nearby Connections — primary transport layer for :relay
+play-services-nearby = { group = "com.google.android.gms", name = "play-services-nearby", version.ref = "nearbyConnections" }
+
+# Coroutines
+kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-test    = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test",    version.ref = "coroutines" }
+
+# JSON Serialization
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
+
+# Testing
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+
+
+[plugins]
+android-application  = { id = "com.android.application",                    version.ref = "agp" }
+android-library      = { id = "com.android.library",                        version.ref = "agp" }
+kotlin-android       = { id = "org.jetbrains.kotlin.android",               version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization",  version.ref = "kotlin" }
