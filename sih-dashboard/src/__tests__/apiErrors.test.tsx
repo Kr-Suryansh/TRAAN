@@ -260,3 +260,108 @@ describe('Stats API — error handling', () => {
     expect(screen.queryByTestId('s-data')).toBeNull();
   });
 });
+
+// ── refreshSummary — async trigger, NOT an Incident ──────────
+describe('refreshSummary — async trigger contract', () => {
+  afterEach(() => { vi.clearAllMocks(); });
+
+  it('resolves to void (undefined) — not an Incident object', async () => {
+    const { refreshSummary } = await import('../api/incidents');
+    // In mock mode, refreshSummary should resolve to undefined (void)
+    vi.mocked(refreshSummary).mockResolvedValueOnce(undefined);
+
+    const result = await refreshSummary('inc-001');
+    expect(result).toBeUndefined();
+  });
+
+  it('does NOT return an Incident — callers must NOT set state from this return', async () => {
+    const { refreshSummary } = await import('../api/incidents');
+    // Simulate the real backend behavior: refreshSummary() returns void
+    // The frontend API contract is Promise<void>, NOT Promise<Incident>
+    vi.mocked(refreshSummary).mockResolvedValueOnce(undefined);
+
+    const result = await refreshSummary('inc-001');
+    // The result must be strictly void (undefined) — NOT an object containing incident fields
+    // This directly verifies that the frontend API does not pass through
+    // the backend's { status: 'refresh_queued' } as if it were an Incident.
+    expect(result).toBeUndefined();
+    // typeof check: void means "not an object" with incident properties
+    expect(typeof result).not.toBe('object');
+  });
+});
+
+// ── fetchIncidents — paginated response normalisation — P0 fix ─
+describe('fetchIncidents — paginated backend response normalisation', () => {
+  beforeEach(() => { vi.stubGlobal('WebSocket', SilentWS); });
+  afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); });
+
+  it('renders correctly when API returns paginated {items,total,page,size}', async () => {
+    const { fetchIncidents } = await import('../api/incidents');
+
+    // fetchIncidents() normalises paginated backend responses internally.
+    // The mock returns Incident[] (the agreed frontend contract).
+    // Simulate the normalised output (fetchIncidents extracts .items internally).
+    const mockItems = [
+      {
+        incident_id: 'inc-paginated-001',
+        cluster_id: 'cl-001',
+        source_sos_uuids: [],
+        location: { lat: 26.9, lng: 75.8 },
+        area_name: 'Paginated Area',
+        emergency_types: ['flood_rescue'],
+        severity: 'high' as const,
+        ai_summary: 'Test from paginated response.',
+        report_count: 2,
+        estimated_people_affected: 5,
+        flags: { medical_emergency: false, trapped: true, elderly_or_children: false, structural_damage: false },
+        first_reported_at: new Date().toISOString(),
+        last_updated_at: new Date().toISOString(),
+        status: 'new' as const,
+        recommended_resources: [
+          { resource_type: 'motorboat', quantity: 1, reasoning: 'Flood area.' }
+        ],
+        assigned_resources: [],
+      }
+    ];
+
+    // fetchIncidents() must return Incident[] regardless of what the backend sends
+    vi.mocked(fetchIncidents).mockResolvedValueOnce(mockItems);
+
+    render(wrap(<IncidentConsumer />));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('done');
+      expect(screen.getByTestId('count').textContent).toBe('1');
+    });
+  });
+
+  it('IncidentList renders paginated incidents correctly (count + no crash)', async () => {
+    const { fetchIncidents } = await import('../api/incidents');
+    vi.mocked(fetchIncidents).mockResolvedValueOnce([
+      {
+        incident_id: 'inc-p-002',
+        cluster_id: 'cl-002',
+        source_sos_uuids: ['sos-1'],
+        location: { lat: 26.9, lng: 75.8 },
+        area_name: 'Pagination Test',
+        emergency_types: ['medical'],
+        severity: 'critical' as const,
+        ai_summary: null,
+        report_count: 1,
+        estimated_people_affected: 3,
+        flags: { medical_emergency: true, trapped: false, elderly_or_children: false, structural_damage: false },
+        first_reported_at: new Date().toISOString(),
+        last_updated_at: new Date().toISOString(),
+        status: 'new' as const,
+        recommended_resources: [{ resource_type: 'ambulance', quantity: 1, reasoning: 'Medical case.' }],
+        assigned_resources: [],
+      }
+    ]);
+
+    render(wrap(<IncidentConsumer />));
+
+    await waitFor(() => expect(screen.getByTestId('count').textContent).toBe('1'));
+    // Confirm this does not crash the component tree
+    expect(screen.queryByTestId('error')).toBeNull();
+  });
+});

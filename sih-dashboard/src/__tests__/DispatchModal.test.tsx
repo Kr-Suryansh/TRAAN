@@ -139,9 +139,25 @@ describe('DispatchModal — human-in-the-loop enforcement', () => {
     expect(incidentsApi.dispatchResource).not.toHaveBeenCalled();
   });
 
-  it('shows AI recommendations as read-only guidance', () => {
+  it('shows AI recommendations as read-only guidance with RECOMMENDED label', () => {
     renderModal();
-    expect(screen.getByText('AI Recommendations')).toBeDefined();
+    // Section header should clearly identify these as AI/OR-Tools recommendations
+    expect(screen.getByText('AI / OR-Tools Recommendations')).toBeDefined();
+    // The reasoning text should be present
     expect(screen.getByText('Water access needed')).toBeDefined();
+    // The RECOMMENDED badge must be visible — it is not a dispatch confirmation
+    expect(screen.getByText('RECOMMENDED · Guidance Only')).toBeDefined();
+  });
+
+  it('AI recommendation section does NOT have a dispatch/confirm button', () => {
+    renderModal();
+    // The RECOMMENDED section must be purely informational — no button inside it
+    const recommendedLabel = screen.getByText('RECOMMENDED · Guidance Only');
+    expect(recommendedLabel).toBeDefined();
+    // The confirm button is only in the footer actions section
+    const confirmBtn = document.getElementById('dispatch-confirm-btn');
+    expect(confirmBtn).toBeTruthy();
+    // It must still be disabled (human confirmation not yet given)
+    expect((confirmBtn as HTMLButtonElement).disabled).toBe(true);
   });
 });

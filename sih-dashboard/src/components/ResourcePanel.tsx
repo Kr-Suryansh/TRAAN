@@ -2,11 +2,15 @@
 // sih-dashboard · src/components/ResourcePanel.tsx
 // Resources grouped by category. Live-updated on resource_updated WS event.
 // Clearly labelled as mock IDRN-style registry.
+//
+// State ownership: resources/loading/error are owned by DashboardPage via
+// useResources() and passed here as props. ResourcePanel does NOT call
+// useResources() — that would create a second independent state instance
+// and cause duplicate REST requests.
 // ============================================================
 
 import { useState } from 'react';
 import { Package, ChevronDown, ChevronUp, Phone } from 'lucide-react';
-import { useResources } from '../hooks/useResources';
 import type { Resource, ResourceCategory } from '../types';
 
 const CATEGORY_LABELS: Record<ResourceCategory, string> = {
@@ -24,8 +28,13 @@ const STATUS_DOT: Record<string, string> = {
   maintenance:       'var(--gray-500)',
 };
 
-export function ResourcePanel() {
-  const { resources, loading, error } = useResources();
+interface ResourcePanelProps {
+  resources: Resource[];
+  loading: boolean;
+  error: string | null;
+}
+
+export function ResourcePanel({ resources, loading, error }: ResourcePanelProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set(['medical', 'rescue']));
 
   const grouped = resources.reduce<Record<string, Resource[]>>((acc, r) => {

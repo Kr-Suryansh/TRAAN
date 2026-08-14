@@ -1,10 +1,12 @@
 // ============================================================
 // sih-dashboard · src/__tests__/incidentUtils.test.ts
-// Tests for sort order, flag logic, and time display utilities.
+// Tests for sort order, flag logic, and canonical contract shapes.
+// Uses the REAL production sortIncidents utility — NOT a duplicate.
 // ============================================================
 
 import { describe, it, expect } from 'vitest';
-import type { Incident } from '../types';
+import { sortIncidents, SEVERITY_ORDER } from '../utils/incidentUtils';
+import type { Incident, RecommendedResource } from '../types';
 
 // Helper: minimal incident
 function makeIncident(id: string, severity: Incident['severity'], msAgo: number): Incident {
@@ -28,17 +30,16 @@ function makeIncident(id: string, severity: Incident['severity'], msAgo: number)
   };
 }
 
-// Inline sort function (mirrors IncidentList)
-const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-function sortIncidents(incidents: Incident[]): Incident[] {
-  return [...incidents].sort((a, b) => {
-    const sevDiff = (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99);
-    if (sevDiff !== 0) return sevDiff;
-    return new Date(b.first_reported_at).getTime() - new Date(a.first_reported_at).getTime();
+describe('SEVERITY_ORDER constant', () => {
+  it('defines critical=0, high=1, medium=2, low=3', () => {
+    expect(SEVERITY_ORDER['critical']).toBe(0);
+    expect(SEVERITY_ORDER['high']).toBe(1);
+    expect(SEVERITY_ORDER['medium']).toBe(2);
+    expect(SEVERITY_ORDER['low']).toBe(3);
   });
-}
+});
 
-describe('Incident sort order', () => {
+describe('sortIncidents — canonical sort order', () => {
   it('sorts critical before high before medium before low', () => {
     const incidents = [
       makeIncident('low-1', 'low', 1000),
@@ -50,7 +51,7 @@ describe('Incident sort order', () => {
     expect(sorted.map((i) => i.severity)).toEqual(['critical', 'high', 'medium', 'low']);
   });
 
-  it('within same severity, sorts more recent first', () => {
+  it('within same severity, sorts more recent first (lower msAgo = more recent)', () => {
     const incidents = [
       makeIncident('high-old', 'high', 60_000),
       makeIncident('high-new', 'high', 5_000),
@@ -68,9 +69,16 @@ describe('Incident sort order', () => {
     const inc = makeIncident('only', 'medium', 1000);
     expect(sortIncidents([inc])).toEqual([inc]);
   });
+
+  it('does not mutate the original array', () => {
+    const original = [makeIncident('low-1', 'low', 0), makeIncident('crit-1', 'critical', 0)];
+    const originalOrder = original.map((i) => i.incident_id);
+    sortIncidents(original);
+    expect(original.map((i) => i.incident_id)).toEqual(originalOrder);
+  });
 });
 
-describe('StatsSummary field names match contract', () => {
+describe('StatsSummary field names — Day 1 contract', () => {
   it('active_incidents has critical/high/medium/low keys', () => {
     const stats = {
       active_incidents: { critical: 1, high: 2, medium: 0, low: 1 },
@@ -85,12 +93,40 @@ describe('StatsSummary field names match contract', () => {
   });
 });
 
-describe('Incident flag structure', () => {
+describe('Incident flag structure — Day 1 contract', () => {
   it('flag object has all four required fields', () => {
     const flags = { medical_emergency: true, trapped: false, elderly_or_children: true, structural_damage: false };
     expect('medical_emergency' in flags).toBe(true);
     expect('trapped' in flags).toBe(true);
     expect('elderly_or_children' in flags).toBe(true);
     expect('structural_damage' in flags).toBe(true);
+  });
+});
+
+describe('RecommendedResource — canonical contract (§1.5 day1-contracts)', () => {
+  it('canonical RecommendedResource requires resource_type, quantity, reasoning', () => {
+    // resource_type is now required per the Day 1 canonical contract.
+    // This test verifies the type structure is correct at runtime.
+    const rec: RecommendedResource = {
+      resource_type: 'ambulance',
+      quantity: 2,
+      reasoning: 'Medical cases require immediate attention.',
+    };
+    expect(rec.resource_type).toBe('ambulance');
+    expect(rec.quantity).toBe(2);
+    expect(rec.reasoning).toBeTruthy();
+    // resource_id is optional — the canonical display field is resource_type
+    expect(rec.resource_id).toBeUndefined();
+  });
+
+  it('resource_id may be present as an optional compat field but must not be required', () => {
+    const recWithId: RecommendedResource = {
+      resource_type: 'motorboat',
+      quantity: 1,
+      reasoning: 'Flood area needs water rescue.',
+      resource_id: 'res-boat-001', // optional compat
+    };
+    expect(recWithId.resource_type).toBe('motorboat');
+    expect(recWithId.resource_id).toBe('res-boat-001');
   });
 });

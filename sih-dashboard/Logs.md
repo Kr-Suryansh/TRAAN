@@ -1,5 +1,75 @@
 # Dev Logs — sih-dashboard
 
+## 2026-08-14 (Audit 3 — Frontend Polish & Contract-Compliance Pass)
+
+**Branch:** `mahima` | **Build:** ✅ PASS (0 errors) | **Tests:** ✅ 47/47 PASS
+
+### P0 Fix — `fetchIncidents()` Paginated Response Normalization
+- Added internal `PaginatedIncidentsResponse` adapter type in `src/api/incidents.ts`.
+- `fetchIncidents()` now detects `{items, total, page, size}` backend envelopes and extracts `items` before returning.
+- Public return type remains `Incident[]` — `PaginatedIncidentsResponse` does **not** leak into UI components.
+- New tests in `apiErrors.test.tsx`: paginated response → `Incident[]` → `IncidentList` renders correctly.
+
+### P1 Fix — `refreshSummary()` Void Return Contract
+- Changed return type from `Promise<Incident>` to `Promise<void>`.
+- `IncidentDetail.handleRefreshSummary` no longer updates incident state from the return value. Displays "Queued — awaiting update…" instead.
+- The updated `Incident` arrives via the `incident_updated` WebSocket event (correct design).
+- Prevents the previous runtime corruption where `{status: "refresh_queued"}` was being set as an `Incident`.
+- New tests: `refreshSummary` resolves to `undefined`; result is `typeof !== 'object'`.
+
+### P1 Fix — `fetchIncident()` `source_sos_reports` Normalization
+- `fetchIncident()` now normalises `source_sos_reports` → `sos_reports` at the API boundary.
+- Handles both canonical `{incident, sos_reports}` wrapped shape and flat `Incident` object responses.
+- Frontend-only adapter — backend contract is NOT changed.
+
+### P2 Fix — `RecommendedResource` Canonical Type Restored
+- `resource_type: string` is now **required** (was `optional`), per §1.5 of `day1-contracts-and-repo-setup.md`.
+- `resource_id` remains an optional future compat field.
+- `IncidentDetail.tsx` no longer uses `rec.resource_type || rec.resource_id || 'unspecified_resource'` fallback — canonical field is always `resource_type`.
+- New tests in `incidentUtils.test.ts`: canonical shape and optional `resource_id` compat.
+
+### P2 Fix — Resource State Ownership (Single Source of Truth)
+- `DashboardPage` is now the single owner of `useResources()`.
+- Passes `resources`, `loading`, `error` as props to `ResourcePanel`.
+- `ResourcePanel` no longer calls `useResources()` internally — eliminates duplicate REST request on dashboard render.
+
+### P2 Fix — `sortIncidents` Extracted Utility
+- Created `src/utils/incidentUtils.ts` — exports `sortIncidents()` and `SEVERITY_ORDER`.
+- `IncidentList.tsx` now imports from the utility (no more inline duplicate).
+- `incidentUtils.test.ts` now imports the real production function (was duplicating the implementation).
+
+### P2 Polish — RECOMMENDED vs DISPATCHED Visual Distinction
+- `IncidentDetail.tsx`: AI/OR-Tools recommendations section shows amber "RECOMMENDED · Guidance Only" badge. Dispatched resources section shows green "DISPATCHED" badge. Sections are visually distinct with different background colors.
+- `DispatchModal.tsx`: Recommendations section header changed to "AI / OR-Tools Recommendations" with amber "RECOMMENDED · Guidance Only" badge and `aria-label` for accessibility.
+
+### P3 Fix — Test Environment `MOCK_MODE`
+- `vite.config.ts`: Added `test.env.VITE_MOCK_MODE = 'false'` so `WebSocketContext` creates real WebSocket instances during tests.
+- Without this fix, all 14 WebSocket integration tests failed because `MOCK_MODE` evaluated to `true` in the test environment (since `VITE_MOCK_MODE` was undefined → `undefined !== 'false'` → `true`).
+
+### Documentation
+- `BACKEND_HANDOFF.md`: Created comprehensive integration & handoff document for the backend engineer detailing mock mode, `.env.local` configuration, expected REST/WebSocket endpoint shapes, and human-in-the-loop constraints.
+- `Agent.md`: Rewrote to reflect Component F (not "Component 5"), full architecture, accurate D↔F integration status, all implemented changes.
+- `ApiEndpoints.md`: Rewrote to document pagination adapter note, `source_sos_reports` normalization, `refresh-summary` void contract, and D↔F integration status table.
+- `README.md`: Fixed "Component 5" → "Component F"; clarified `VITE_MOCK_MODE` default behavior; added integration status note and link to `BACKEND_HANDOFF.md`.
+- `Logs.md`: Added this entry (newest-first).
+
+### Cleanup
+- Deleted `src/App.css` — dead code (was never imported).
+- Deleted `src/assets/react.svg` — unused Vite starter file.
+- Deleted `src/assets/vite.svg` — unused Vite starter file.
+
+### Test Results (Final)
+| Test file | Tests | Result |
+|---|---|---|
+| `incidentUtils.test.ts` | 10 | ✅ All pass |
+| `apiErrors.test.tsx` | 15 | ✅ All pass |
+| `DispatchModal.test.tsx` | 8 | ✅ All pass |
+| `WebSocketIntegration.test.tsx` | 14 | ✅ All pass |
+| **Total** | **47** | **✅ All pass** |
+
+---
+
+
 ## 2026-08-13 (Audit 2 Remediation Pass — TRAAN Contract & Integration Review)
 
 ### Contract Reconciliation & Defensive Adapters

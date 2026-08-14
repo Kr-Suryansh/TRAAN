@@ -1,21 +1,12 @@
 // ============================================================
 // sih-dashboard · src/components/IncidentList.tsx
 // Sorted by severity (critical→low), then by first_reported_at desc.
+// Sort logic lives in src/utils/incidentUtils.ts (single source of truth).
 // ============================================================
 
-
 import { IncidentCard } from './IncidentCard';
+import { sortIncidents } from '../utils/incidentUtils';
 import type { Incident } from '../types';
-
-const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
-
-function sortIncidents(incidents: Incident[]): Incident[] {
-  return [...incidents].sort((a, b) => {
-    const sevDiff = (SEVERITY_ORDER[a.severity] ?? 99) - (SEVERITY_ORDER[b.severity] ?? 99);
-    if (sevDiff !== 0) return sevDiff;
-    return new Date(b.first_reported_at).getTime() - new Date(a.first_reported_at).getTime();
-  });
-}
 
 interface IncidentListProps {
   incidents: Incident[];

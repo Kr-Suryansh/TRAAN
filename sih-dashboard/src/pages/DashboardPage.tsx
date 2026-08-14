@@ -22,7 +22,7 @@ import type { Incident, DispatchRecord } from '../types';
 export function DashboardPage() {
   const { user, logout } = useAuth();
   const { incidents, loading: incLoading, error: incError, reload: reloadIncidents } = useIncidents();
-  const { resources } = useResources();
+  const { resources, loading: resLoading, error: resError } = useResources();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const handleSelectIncident = useCallback((id: string) => {
@@ -126,10 +126,10 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* RESOURCE PANEL (bottom, spans map + list columns) */}
+        {/* RESOURCE PANEL (bottom, spans map + list columns) — resources owned here */}
         {!selectedId && (
           <div style={{ gridColumn: '1 / 3', gridRow: 2, padding: '0 12px 12px 12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <ResourcePanel />
+            <ResourcePanel resources={resources} loading={resLoading} error={resError} />
           </div>
         )}
       </div>

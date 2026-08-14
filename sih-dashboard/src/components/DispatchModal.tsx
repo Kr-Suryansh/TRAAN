@@ -88,18 +88,33 @@ export function DispatchModal({ incident, resources, onClose, onDispatched }: Di
         </div>
 
         <div style={{ padding: '20px' }}>
-          {/* Recommended resources (read-only guidance) */}
+          {/* Recommended resources (read-only guidance — NOT dispatched) */}
           {incident.recommended_resources.length > 0 && (
             <div style={{ marginBottom: 20 }}>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
-                AI Recommendations
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  AI / OR-Tools Recommendations
+                </p>
+                <span
+                  style={{
+                    fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    color: 'hsl(43, 95%, 50%)',
+                    background: 'hsl(43, 95%, 10%)',
+                    border: '1px solid hsl(43, 95%, 25%)',
+                    borderRadius: 4, padding: '2px 7px',
+                  }}
+                  aria-label="These are AI-generated recommendations only, not confirmed dispatches"
+                >
+                  RECOMMENDED · Guidance Only
+                </span>
+              </div>
               {incident.recommended_resources.map((rec, i) => (
                 <div
                   key={i}
                   style={{
-                    background: 'var(--surface-3)',
-                    border: '1px solid var(--border-subtle)',
+                    background: 'hsl(43, 90%, 5%)',
+                    border: '1px solid hsl(43, 90%, 16%)',
                     borderRadius: 'var(--radius-sm)',
                     padding: '8px 12px',
                     marginBottom: 6,

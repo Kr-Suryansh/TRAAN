@@ -61,10 +61,17 @@ export interface IncidentFlags {
 }
 
 export interface RecommendedResource {
-  resource_type?: string;
-  resource_id?: string;
+  /** Canonical Day 1 field — required. Must match resource category/sub_type. */
+  resource_type: string;
   quantity: number;
   reasoning: string;
+  /**
+   * Optional: future compat adapter field only.
+   * The canonical contract is resource_type; resource_id is NOT in the Day 1
+   * recommended_resources spec. Include only if backend normalization requires it
+   * and isolate it outside display logic.
+   */
+  resource_id?: string;
 }
 
 export interface Incident {

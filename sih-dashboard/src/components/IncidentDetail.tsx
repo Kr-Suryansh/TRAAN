@@ -60,10 +60,13 @@ export function IncidentDetail({
     if (!incident) return;
     setRefreshing(true);
     try {
-      const updated = await refreshSummary(incident.incident_id);
-      setIncident(updated);
-      onIncidentUpdated(updated);
-    } catch { /* ignore */ } finally { setRefreshing(false); }
+      // refreshSummary() returns void — it queues a backend AI refresh.
+      // The updated incident will arrive via the incident_updated WebSocket event.
+      // We keep the current incident in local state; do NOT replace it here.
+      await refreshSummary(incident.incident_id);
+      // Briefly show a "queued" indicator so the user knows the request was sent
+      setTimeout(() => setRefreshing(false), 2000);
+    } catch { setRefreshing(false); }
   };
 
   const handleDispatched = (record: DispatchRecord) => {
@@ -129,7 +132,7 @@ export function IncidentDetail({
                     id="refresh-summary-btn"
                   >
                     <RefreshCw size={12} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
-                    {refreshing ? 'Refreshing…' : 'Refresh'}
+                    {refreshing ? 'Queued — awaiting update…' : 'Refresh'}
                   </button>
                 }
               >
@@ -165,31 +168,81 @@ export function IncidentDetail({
                 </div>
               </Section>
 
-              {/* Recommendations */}
-              <Section title="Resource Recommendations">
+              {/* Recommendations — AI/OR-Tools guidance only, NOT dispatched resources */}
+              <Section
+                title="AI / OR-Tools Recommendations"
+                action={
+                  <span
+                    style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      color: 'hsl(43, 95%, 50%)',
+                      background: 'hsl(43, 95%, 10%)',
+                      border: '1px solid hsl(43, 95%, 25%)',
+                      borderRadius: 4,
+                      padding: '2px 7px',
+                    }}
+                  >
+                    RECOMMENDED · Guidance Only
+                  </span>
+                }
+              >
                 {incident.recommended_resources.length === 0 ? (
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                     No recommendation yet — optimization may not have run for this incident.
                   </p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {incident.recommended_resources.map((rec, i) => {
-                      const resName = rec.resource_type || rec.resource_id || 'unspecified_resource';
-                      return (
-                        <div key={i} style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '10px 12px' }}>
-                          <div style={{ display: 'flex', gap: 8, marginBottom: 4, alignItems: 'center' }}>
-                            <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'capitalize' }}>{resName.replace(/_/g, ' ')}</span>
-                            <span style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 7px', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                              × {rec.quantity}
-                            </span>
-                          </div>
-                          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{rec.reasoning}</p>
+                    {incident.recommended_resources.map((rec, i) => (
+                      <div key={i} style={{ background: 'hsl(43, 90%, 6%)', border: '1px solid hsl(43, 90%, 18%)', borderRadius: 'var(--radius-sm)', padding: '10px 12px' }}>
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 4, alignItems: 'center' }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'capitalize', color: 'var(--text-primary)' }}>
+                            {rec.resource_type.replace(/_/g, ' ')}
+                          </span>
+                          <span style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', borderRadius: 4, padding: '1px 7px', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                            × {rec.quantity}
+                          </span>
                         </div>
-                      );
-                    })}
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{rec.reasoning}</p>
+                      </div>
+                    ))}
                   </div>
                 )}
               </Section>
+
+              {/* Assigned Resources — dispatched by authority, distinct from recommendations */}
+              {incident.assigned_resources.length > 0 && (
+                <Section
+                  title="Assigned / Dispatched"
+                  action={
+                    <span
+                      style={{
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.06em',
+                        textTransform: 'uppercase',
+                        color: 'var(--low)',
+                        background: 'hsl(142, 70%, 8%)',
+                        border: '1px solid hsl(142, 70%, 22%)',
+                        borderRadius: 4,
+                        padding: '2px 7px',
+                      }}
+                    >
+                      DISPATCHED
+                    </span>
+                  }
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {incident.assigned_resources.map((rid) => (
+                      <div key={rid} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--low)', background: 'hsl(142, 70%, 5%)', border: '1px solid hsl(142, 70%, 18%)', borderRadius: 'var(--radius-sm)', padding: '6px 10px' }}>
+                        {rid}
+                      </div>
+                    ))}
+                  </div>
+                </Section>
+              )}
 
               {/* SOS Reports (collapsible) */}
               <Section
