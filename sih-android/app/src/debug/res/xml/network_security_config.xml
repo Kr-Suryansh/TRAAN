@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Configuration — debug only.
+
+    Android 9+ blocks cleartext (HTTP) by default. For local development and
+    emulator testing, we allow cleartext to specific known dev hosts ONLY.
+
+    This file is referenced ONLY from the debug manifest override (src/debug/AndroidManifest.xml).
+    The release build uses the platform default (cleartext blocked everywhere).
+
+    Security rule (7.2): Do NOT add wildcard domains or production hosts here.
+    Do NOT enable cleartext for release builds.
+
+    If you need to test from a physical device against your dev machine:
+      1. Find your machine's LAN IP (e.g. `ipconfig` / `ifconfig` → 192.168.x.x)
+      2. Add a <domain> entry for that specific IP locally
+      3. Do NOT commit the IP entry — it changes per machine and per network
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Android emulator loopback → host machine (where the dev backend runs) -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- localhost for rooted device / port-forwarded adb testing -->
+        <domain includeSubdomains="true">localhost</domain>
+        <!--
+            For physical device LAN testing, add your machine's IP here locally:
+            <domain includeSubdomains="false">192.168.x.x</domain>
+            Do not commit this — the IP is machine/network-specific.
+        -->
+    </domain-config>
+</network-security-config>

@@ -27,12 +27,15 @@ data class OnboardingUiState(
     val emergencyContactNumber: String= "",
     val isSaving: Boolean             = false,
     val savedSuccessfully: Boolean    = false,
-    val errorMessage: String?         = null
+    val errorMessage: String?         = null,
+    /** Field-level validation errors — key = field name, value = error message. */
+    val validationErrors: Map<String, String> = emptyMap()
 )
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    private val profileRepository: UserMedicalProfileRepository
+    private val profileRepository: UserMedicalProfileRepository,
+    private val devicePreferences: com.sih.data.prefs.DevicePreferences
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OnboardingUiState())
@@ -73,7 +76,41 @@ class OnboardingViewModel @Inject constructor(
     fun onEmergencyContactNumberChange(v: String) = _state.update { it.copy(emergencyContactNumber = v) }
 
     fun saveProfile() {
-        _state.update { it.copy(isSaving = true, errorMessage = null) }
+        // P1.6.3 — validate inputs before persisting
+        val errors = mutableMapOf<String, String>()
+
+        val ageStr = _state.value.age.trim()
+        if (ageStr.isNotBlank()) {
+            val ageInt = ageStr.toIntOrNull()
+            when {
+                ageInt == null  -> errors["age"] = "Must be a number"
+                ageInt < 1      -> errors["age"] = "Must be at least 1"
+                ageInt > 120    -> errors["age"] = "Must be 120 or less"
+            }
+        }
+
+        val phoneStr = _state.value.emergencyContactNumber.trim()
+        if (phoneStr.isNotBlank()) {
+            val digitsOnly = phoneStr.replace("+", "").replace(" ", "")
+            if (!digitsOnly.all { it.isDigit() } || digitsOnly.length < 7) {
+                errors["emergencyContactNumber"] = "Enter a valid phone number"
+            }
+        }
+        
+        val bloodTypeStr = _state.value.bloodType.trim().uppercase()
+        if (bloodTypeStr.isNotBlank()) {
+            val validTypes = setOf("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-")
+            if (bloodTypeStr !in validTypes) {
+                errors["bloodType"] = "Invalid blood type"
+            }
+        }
+
+        if (errors.isNotEmpty()) {
+            _state.update { it.copy(validationErrors = errors) }
+            return
+        }
+
+        _state.update { it.copy(isSaving = true, errorMessage = null, validationErrors = emptyMap()) }
         viewModelScope.launch {
             runCatching {
                 val s = _state.value
@@ -82,7 +119,7 @@ class OnboardingViewModel @Inject constructor(
                         id                     = 1,
                         name                   = s.name.trim().ifBlank { null },
                         age                    = s.age.trim().toIntOrNull(),
-                        bloodType              = s.bloodType.trim().ifBlank { null },
+                        bloodType              = s.bloodType.trim().uppercase().ifBlank { null },
                         medicalConditions      = toJsonArray(s.medicalConditions),
                         medications            = toJsonArray(s.medications),
                         allergies              = toJsonArray(s.allergies),
@@ -91,11 +128,17 @@ class OnboardingViewModel @Inject constructor(
                     )
                 )
             }.onSuccess {
+                devicePreferences.setOnboardingSkipped(true) // Profile saved implies completion
                 _state.update { it.copy(isSaving = false, savedSuccessfully = true) }
             }.onFailure { e ->
                 _state.update { it.copy(isSaving = false, errorMessage = e.message) }
             }
         }
+    }
+
+    fun skipOnboarding() {
+        devicePreferences.setOnboardingSkipped(true)
+        _state.update { it.copy(savedSuccessfully = true) }
     }
 
     /** Convert "diabetic, cardiac" → JSON ["diabetic","cardiac"] for Room storage. */

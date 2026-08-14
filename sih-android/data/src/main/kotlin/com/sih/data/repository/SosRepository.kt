@@ -1,6 +1,7 @@
 package com.sih.data.repository
 
 import androidx.work.WorkManager
+import com.sih.data.SosConstants
 import com.sih.data.db.dao.SosRequestDao
 import com.sih.data.db.entity.SosRequestEntity
 import com.sih.data.db.entity.UserMedicalProfileEntity
@@ -24,6 +25,16 @@ import javax.inject.Singleton
  * Key invariant: the SOS button must work with the phone in airplane mode.
  * [createSos] never makes a network call — it only writes to Room.
  * WorkManager handles the upload asynchronously once connectivity is available.
+ *
+ * ## Device identity (P0.4.6)
+ * The device_id in each SOS record is resolved as:
+ *   1. Backend-registered device_id (pref_device_id) — preferred when available.
+ *   2. Stable local installation UUID (pref_installation_id) — fallback for offline-first.
+ * This guarantees that all offline SOS messages from the same installation carry the
+ * SAME device_id, regardless of whether registration has completed.
+ *
+ * ## TTL (P0.4.4)
+ * Expiry uses [SosConstants.TTL_HOURS] (72 h). Never 7 days, never magic numbers.
  */
 @Singleton
 class SosRepository @Inject constructor(
@@ -64,7 +75,11 @@ class SosRepository @Inject constructor(
     ): String {
         val uuid     = UUID.randomUUID().toString()
         val now      = DateTimeFormatter.ISO_INSTANT.format(Instant.now())
-        val deviceId = devicePreferences.getDeviceId() ?: "unregistered_${UUID.randomUUID()}"
+
+        // P0.4.6 — stable device identity: prefer backend-registered id, fall back
+        // to the stable installation UUID (never a new random UUID per SOS).
+        val deviceId = devicePreferences.getDeviceId()
+            ?: devicePreferences.getOrCreateInstallationId()
 
         val medicalSnapshotJson = profile?.let { p ->
             val dto = UserMedicalProfileDto(
@@ -117,7 +132,8 @@ class SosRepository @Inject constructor(
 
     /** All SOS records created by this device. */
     fun observeOwnSos(): Flow<List<SosRequestEntity>> {
-        val deviceId = devicePreferences.getDeviceId() ?: return kotlinx.coroutines.flow.flowOf(emptyList())
+        val deviceId = devicePreferences.getDeviceId()
+            ?: devicePreferences.getOrCreateInstallationId()
         return sosRequestDao.observeOwnSos(deviceId)
     }
 
@@ -125,11 +141,13 @@ class SosRepository @Inject constructor(
     fun observeCount(): Flow<Int> = sosRequestDao.observeCount()
 
     /**
-     * Delete uploaded records older than [ttlDays] days.
+     * Delete uploaded records older than [SosConstants.TTL_HOURS].
      * Call periodically (e.g. daily) — never immediately after upload.
+     *
+     * P0.4.4: uses the centralized TTL constant — no magic numbers here.
      */
-    suspend fun purgeExpiredRecords(ttlDays: Long = 7) {
-        val cutoff = Instant.now().minusSeconds(ttlDays * 24 * 3600)
+    suspend fun purgeExpiredRecords() {
+        val cutoff = Instant.now().minusSeconds(SosConstants.TTL_SECONDS)
         val cutoffIso = DateTimeFormatter.ISO_INSTANT.format(cutoff)
         sosRequestDao.deleteExpiredUploaded(cutoffIso)
     }

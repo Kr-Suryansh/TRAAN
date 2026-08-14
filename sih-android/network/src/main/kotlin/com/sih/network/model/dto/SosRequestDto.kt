@@ -6,8 +6,9 @@ import com.squareup.moshi.JsonClass
 /**
  * The SOS record as it travels over the wire — §1.2 shape.
  *
- * IMPORTANT: The [status] field from SOSRequest is device-side ONLY.
- * It is intentionally absent here so it is never sent to the backend.
+ * IMPORTANT: The [status] field from SOSRequest is device-side ONLY and is
+ * intentionally ABSENT from this DTO. It must never be serialised or sent to
+ * the backend. Any attempt to include it is a contract violation (§1.2 / rule C).
  *
  * emergency_type enum values (exact strings per §1.2):
  *   medical | trapped | structural_collapse | flood_rescue | fire | missing_person | unspecified
@@ -29,6 +30,7 @@ data class SosRequestDto(
     @Json(name = "custom_message")   val customMessage: String? = null,
     @Json(name = "contact_number")   val contactNumber: String? = null,
     @Json(name = "relay_hop_count")  val relayHopCount: Int = 0,
-    @Json(name = "last_relayed_at")  val lastRelayedAt: String,
-    @Json(name = "status")           val status: String
+    @Json(name = "last_relayed_at")  val lastRelayedAt: String
+    // NOTE: `status` is device-side only — it lives on SosRequestEntity (Room) and
+    // SosStatus enum, NOT here. Rule C of the non-negotiable contract.
 )

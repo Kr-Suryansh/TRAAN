@@ -14,6 +14,9 @@ import org.junit.Test
  *
  * Verifies that JSON keys exactly match the field names defined in
  * day1-contracts-and-repo-setup.md §1.2 and §1.4.
+ *
+ * P0.4.2 regression: proves that `status` is structurally absent from the
+ * network DTO and cannot appear in a serialised payload.
  */
 class DtoSerializationTest {
 
@@ -33,7 +36,7 @@ class DtoSerializationTest {
     }
 
     @Test
-    fun `SosRequestDto excludes status field`() {
+    fun `SosRequestDto serialises without status field`() {
         val adapter = moshi.adapter(SosRequestDto::class.java)
         val dto = SosRequestDto(
             uuid          = "test-uuid",
@@ -46,6 +49,48 @@ class DtoSerializationTest {
         )
         val json = adapter.toJson(dto)
         assertFalse("status must NOT be in network payload", json.contains("\"status\""))
+    }
+
+    /**
+     * P0.4.2 regression — serialised payload must not contain "status" under any
+     * circumstance, including when all optional fields are populated.
+     */
+    @Test
+    fun `SosRequestDto serialised JSON does not contain status key — fully populated`() {
+        val adapter = moshi.adapter(SosRequestDto::class.java)
+        val dto = SosRequestDto(
+            uuid          = "aabbccdd-1234-5678-abcd-ef0123456789",
+            deviceId      = "reg-device-id",
+            createdAt     = "2026-08-13T12:00:00Z",
+            location      = LocationDto(lat = 19.076, lng = 72.877, accuracyM = 5.0),
+            isQuickSos    = false,
+            emergencyType = "flood_rescue",
+            severityHint  = "high",
+            peopleCount   = 3,
+            medicalSnapshot = UserMedicalProfileDto(
+                name = "Test",
+                bloodType = "O+",
+                medicalConditions = listOf("diabetic"),
+                medications = listOf("metformin"),
+                allergies = listOf("penicillin")
+            ),
+            customMessage = "Third floor, 3 people",
+            contactNumber = "+919999999999",
+            relayHopCount = 2,
+            lastRelayedAt = "2026-08-13T12:05:00Z"
+        )
+        val json = adapter.toJson(dto)
+
+        // The critical invariant (rule C / P0.4.1)
+        assertFalse("'status' key must NEVER appear in the SOS network payload", json.contains("\"status\""))
+
+        // Also verify required fields are present
+        assertTrue(json.contains("\"uuid\""))
+        assertTrue(json.contains("\"device_id\""))
+        assertTrue(json.contains("\"is_quick_sos\""))
+        assertTrue(json.contains("\"emergency_type\""))
+        assertTrue(json.contains("\"last_relayed_at\""))
+        assertTrue(json.contains("\"relay_hop_count\""))
     }
 
     @Test

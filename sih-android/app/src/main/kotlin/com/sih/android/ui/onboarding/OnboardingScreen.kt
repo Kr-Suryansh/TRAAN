@@ -88,7 +88,9 @@ fun OnboardingScreen(
                     onChange = viewModel::onBloodTypeChange,
                     label    = "Blood type",
                     placeholder = "e.g. O+",
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    isError  = state.validationErrors.containsKey("bloodType"),
+                    supportingText = state.validationErrors["bloodType"]
                 )
             }
 
@@ -127,7 +129,9 @@ fun OnboardingScreen(
                 onChange = { newValue -> viewModel.onEmergencyContactNumberChange(newValue.filter { it.isDigit() || it == '+' }) },
                 label    = "Contact phone",
                 keyboard = KeyboardType.Phone,
-                placeholder = "+91..."
+                placeholder = "+91...",
+                isError  = state.validationErrors.containsKey("emergencyContactNumber"),
+                supportingText = state.validationErrors["emergencyContactNumber"]
             )
 
             Spacer(Modifier.height(16.dp))
@@ -149,7 +153,7 @@ fun OnboardingScreen(
             }
 
             TextButton(
-                onClick  = onDone,
+                onClick  = viewModel::skipOnboarding,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Skip for now")
@@ -176,7 +180,9 @@ private fun ProfileTextField(
     label: String,
     placeholder: String = "",
     keyboard: KeyboardType = KeyboardType.Text,
-    modifier: Modifier = Modifier.fillMaxWidth()
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    isError: Boolean = false,
+    supportingText: String? = null
 ) {
     OutlinedTextField(
         value         = value,
@@ -185,6 +191,8 @@ private fun ProfileTextField(
         placeholder   = { Text(placeholder) },
         keyboardOptions = KeyboardOptions(keyboardType = keyboard),
         singleLine    = true,
-        modifier      = modifier
+        modifier      = modifier,
+        isError       = isError,
+        supportingText = supportingText?.let { { Text(it) } }
     )
 }

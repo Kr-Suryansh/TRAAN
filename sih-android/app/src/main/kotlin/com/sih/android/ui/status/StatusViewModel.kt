@@ -42,6 +42,7 @@ class StatusViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val sosRepository: SosRepository,
     private val disasterApi: DisasterApi,
+    private val devicePreferences: com.sih.data.prefs.DevicePreferences,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -102,13 +103,19 @@ class StatusViewModel @Inject constructor(
      * Register for connectivity events so we auto-check the backend the moment
      * the device comes back online.
      *
-     * Uses [ConnectivityManager.registerNetworkCallback] with a request for
-     * INTERNET capability — fires [networkCallback.onAvailable] only when a
-     * network with real internet access becomes available.
+     * Uses [ConnectivityManager.registerNetworkCallback] with both
+     * [NetworkCapabilities.NET_CAPABILITY_INTERNET] (link has internet routing)
+     * AND [NetworkCapabilities.NET_CAPABILITY_VALIDATED] (Android has confirmed
+     * actual internet access, ruling out captive portals and restricted networks).
+     *
+     * P1.5.4: Using VALIDATED prevents false-positive backend checks when the
+     * device connects to a network that doesn't actually reach the internet
+     * (e.g. captive portal, airplane-mode hotspot).
      */
     private fun registerConnectivityCallback() {
         val request = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
             .build()
         runCatching {
             connectivityManager.registerNetworkCallback(request, networkCallback)
@@ -124,6 +131,12 @@ class StatusViewModel @Inject constructor(
     fun checkBackendStatus() {
         // Avoid overlapping checks
         if (_state.value.isCheckingBackend) return
+        
+        // P0.4.6: Do not check backend if not registered
+        if (!devicePreferences.isRegistered()) return
+
+        val activeNetwork = connectivityManager.activeNetwork
+        if (activeNetwork == null) return // Device is offline
 
         _state.update { it.copy(isCheckingBackend = true, backendError = null) }
         viewModelScope.launch {

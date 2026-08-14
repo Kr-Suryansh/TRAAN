@@ -1,0 +1,12 @@
+# IntelliJ / Android Studio
+.idea/
+*.iml
+
+# Local Configuration
+local.properties
+
+# OS files
+.DS_Store
+
+# Antigravity prompts / scratch
+scratch/

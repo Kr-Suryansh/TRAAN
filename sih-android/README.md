@@ -8,6 +8,18 @@ SIH 2026 · Agent C (Android App Shell)
 
 The citizen-facing Android app for offline-capable disaster SOS reporting.
 
+## Phase 2: Refinements & Fix Pass
+
+The following fixes were implemented to enforce Day 1 architectural constraints and improve stability:
+- **Location Permission Race:** Fixed a race condition where SOS was fired before permission could be granted. SOS creation now correctly awaits the launcher callback.
+- **Onboarding Skip Persistence:** Skipping the Medical Profile setup is now persisted via SharedPreferences and correctly skips the screen on app restarts.
+- **Network Security Separation:** Development cleartext configurations are strictly isolated to the `debug` source set to prevent vulnerabilities in `release` builds.
+- **Improved Status Screen Efficiency:** The Status Screen now checks `isRegistered()` before polling the backend, preventing unnecessary 401 calls for offline/unregistered users.
+- **Gateway Sync Tests:** Added test coverage for failure, retry, deduplication, and 401 scenarios in the Gateway Upload worker.
+- **Blood Type Validation:** Ensures inputs like "A+" or "O-" are correctly formatted during Medical Profile setup.
+
+> **Note:** The ambiguity around `device_id` vs `installation ID` in the Day 1 registration contract requires backend confirmation before resolution. The existing fallback behavior remains in place to ensure offline SOS capabilities are not broken.
+
 - **One tap** creates a valid SOS — works with the phone in **airplane mode**, no network required.
 - SOS messages spread phone-to-phone via the **offline mesh relay** (Nearby Connections — implemented by Agent A+B in `:relay`).
 - Any phone with internet acts as a **gateway** and uploads the full relay store to the backend.
@@ -110,11 +122,12 @@ Full contract: see [`ApiEndpoints.md`](ApiEndpoints.md) and [`../day1-contracts-
 
 ## Key Invariants
 
-1. **`SosRepository.createSos()` makes zero network calls** — works in airplane mode
-2. **`SosRequestDto` has no `status` field** — device-side only, never sent to backend
-3. **Records are NOT deleted after upload** — relay mesh may still need them (TTL = 7 days)
-4. **`UserMedicalProfile` is singleton (id=1)** — auto-snapshotted at SOS creation
-5. **Gateway uploads entire local store** — not just own SOS
+1. **`SosRepository.createSos()` makes zero network calls** — works in airplane mode.
+2. **`SosRequestDto` has no `status` field** — device-side only, never sent to backend.
+3. **Records are NOT deleted after upload** — relay mesh may still need them (TTL = 72 hours).
+4. **`UserMedicalProfile` is singleton (id=1)** — auto-snapshotted at SOS creation.
+5. **Gateway uploads entire local store** — not just own SOS.
+6. **Zero personal account / login screens** — citizen SOS creation is completely anonymous and unblocked by login walls.
 
 ---
 
@@ -122,24 +135,25 @@ Full contract: see [`ApiEndpoints.md`](ApiEndpoints.md) and [`../day1-contracts-
 
 | Dependency | Provider | Status |
 |------------|----------|--------|
-| `POST /api/v1/auth/device/register` | Agent D | Awaiting backend (Cleartext HTTP fix applied) |
-| `POST /api/v1/sos/batch` | Agent D | Awaiting backend |
-| `GET /api/v1/sos/{uuid}/status` | Agent D | Awaiting backend |
-| `RelayRepository` real implementation | Agent A+B | Stub (empty list) |
+| `POST /api/v1/auth/device/register` | Agent D | Awaiting backend (Debug cleartext config active for `10.0.2.2:8000`) |
+| `POST /api/v1/sos/batch` | Agent D | Awaiting backend (Immediate sync + periodic background worker) |
+| `GET /api/v1/sos/{uuid}/status` | Agent D | Awaiting backend (Auto-polled on network reconnect) |
+| `RelayRepository` real implementation | Agent A+B | Stub provided; see [`../COMPONENT_C_TO_AB_RELAY_HANDOFF.md`](../COMPONENT_C_TO_AB_RELAY_HANDOFF.md) |
 
 ---
 
-## Known Limitations
+## Known Limitations & Integration Notes
 
-- No first-launch detection for onboarding redirect — still pending.
-- Relay mesh (`Agent A+B`) is currently stubbed out.
+- **A+B Mesh Engine:** `:relay` currently returns empty lists and stub implementations pending Agent A+B integration. Complete handoff specifications are provided in [`COMPONENT_C_TO_AB_RELAY_HANDOFF.md`](../COMPONENT_C_TO_AB_RELAY_HANDOFF.md).
+- **`device_id` Contract Reconciliation:** Handled via local UUID fallback for offline capability prior to backend handshake.
 
 ---
 
-## Tracking Files
+## Tracking & Handoff Files
 
 | File | Purpose |
 |------|---------|
 | [`Logs.md`](Logs.md) | Chronological action log |
 | [`Agent.md`](Agent.md) | Context, decisions, change history |
 | [`ApiEndpoints.md`](ApiEndpoints.md) | API contract reference |
+| [`COMPONENT_C_TO_AB_RELAY_HANDOFF.md`](../COMPONENT_C_TO_AB_RELAY_HANDOFF.md) | Complete handoff guide for Agent A+B (Mesh Engine) |

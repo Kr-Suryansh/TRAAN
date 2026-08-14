@@ -46,6 +46,17 @@ private val LocationGreen  = Color(0xFF4CAF50)
 private val LocationAmber  = Color(0xFFFFC107)
 private val LocationRed    = Color(0xFFEF5350)
 
+// ─── Sentinel ─────────────────────────────────────────────────────────────────
+/**
+ * Fallback coordinates when no GPS fix is available.
+ *
+ * P1.5.3: The Day 1 contract requires non-null lat/lng; 0.0/0.0 is the agreed
+ * sentinel. This named constant prevents accidental treatment as a meaningful
+ * location inside the Android logic (a meaningful location at 0.0/0.0 would be
+ * in the Gulf of Guinea, which is not an expected disaster zone for this project).
+ */
+private const val UNKNOWN_LAT_LNG = 0.0
+
 /**
  * Home / SOS screen.
  *
@@ -65,11 +76,18 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val haptic = LocalHapticFeedback.current
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     // ── Permission launcher — requests location, then fires SOS regardless ───
+    var pendingSosQuick by remember { mutableStateOf<Boolean?>(null) }
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { /* result ignored — ViewModel checks at call-time */ }
+    ) { isGranted ->
+        pendingSosQuick?.let { isQuick ->
+            viewModel.triggerSosWithPermissionResult(isQuick, isGranted)
+            pendingSosQuick = null
+        }
+    }
 
     // ── Navigate to Status screen once UUID is ready ─────────────────────────
     LaunchedEffect(state.createdSosUuid) {
@@ -153,9 +171,16 @@ fun HomeScreen(
                     isLoading = state.isCreatingSos,
                     onClick   = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        // Ask for location permission (no-op if already granted)
-                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                        viewModel.triggerSos(isQuickSos = true)
+                        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        
+                        if (hasPermission) {
+                            viewModel.triggerSos(isQuickSos = true)
+                        } else {
+                            pendingSosQuick = true
+                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                        }
                     }
                 )
 
@@ -193,6 +218,15 @@ fun HomeScreen(
                     modifier   = Modifier.padding(horizontal = 16.dp)
                 )
 
+                Spacer(Modifier.height(12.dp))
+
+                // P1.6.1 — optional severity hint (omitted on quick SOS)
+                SeverityHintPicker(
+                    selected   = state.selectedSeverityHint,
+                    onSelected = viewModel::selectSeverityHint,
+                    modifier   = Modifier.padding(horizontal = 16.dp)
+                )
+
                 Spacer(Modifier.height(16.dp))
 
                 OutlinedTextField(
@@ -216,16 +250,20 @@ fun HomeScreen(
                         .padding(horizontal = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
-                        value           = state.peopleCount,
-                        onValueChange   = { newValue -> viewModel.updatePeopleCount(newValue.filter { it.isDigit() }) },
-                        label           = { Text("People") },
-                        placeholder     = { Text("Count") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors          = sosTextFieldColors(),
-                        shape           = RoundedCornerShape(12.dp),
-                        modifier        = Modifier.weight(1f)
-                    )
+                    Column(Modifier.weight(1f)) {
+                        OutlinedTextField(
+                            value           = state.peopleCount,
+                            onValueChange   = { newValue -> viewModel.updatePeopleCount(newValue.filter { it.isDigit() }) },
+                            label           = { Text("People") },
+                            placeholder     = { Text("Count") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            isError         = state.peopleCountError != null,
+                            supportingText  = state.peopleCountError?.let { { Text(it, color = SosRed) } },
+                            colors          = sosTextFieldColors(),
+                            shape           = RoundedCornerShape(12.dp),
+                            modifier        = Modifier.fillMaxWidth()
+                        )
+                    }
                     OutlinedTextField(
                         value           = state.contactNumber,
                         onValueChange   = { newValue -> viewModel.updateContactNumber(newValue.filter { it.isDigit() || it == '+' }) },
@@ -244,8 +282,16 @@ fun HomeScreen(
                 Button(
                     onClick  = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                        viewModel.triggerSos(isQuickSos = false)
+                        val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        
+                        if (hasPermission) {
+                            viewModel.triggerSos(isQuickSos = false)
+                        } else {
+                            pendingSosQuick = false
+                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                        }
                     },
                     enabled  = !state.isCreatingSos,
                     shape    = RoundedCornerShape(14.dp),
@@ -419,6 +465,76 @@ private fun LocationStatusBadge(status: LocationStatus) {
     ) {
         Text(dot, color = color, fontSize = 10.sp)
         Text(text, color = color, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Severity hint picker (P1.6.1)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Optional severity chip picker for the detail SOS form.
+ *
+ * Values: critical | high | medium | low — exactly as per §1.2.
+ * Tapping a selected chip deselects it (toggle behaviour).
+ * Never shown / never required on quick SOS.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SeverityHintPicker(
+    selected: String?,
+    onSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Ordered from highest to lowest urgency per §1.2 enum
+    val severities = listOf("critical", "high", "medium", "low")
+
+    val chipColor = mapOf(
+        "critical" to Color(0xFFB71C1C),
+        "high"     to Color(0xFFE53935),
+        "medium"   to Color(0xFFFF8F00),
+        "low"      to Color(0xFF388E3C)
+    )
+
+    Column(modifier) {
+        Text(
+            text     = "Severity (optional)",
+            fontSize = 12.sp,
+            color    = Color.White.copy(alpha = 0.55f),
+            modifier = Modifier.padding(bottom = 10.dp, start = 4.dp)
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement   = Arrangement.spacedBy(8.dp)
+        ) {
+            severities.forEach { sev ->
+                val isSelected = selected == sev
+                val accentColor = chipColor[sev] ?: SosRed
+                FilterChip(
+                    selected = isSelected,
+                    onClick  = { onSelected(sev) },
+                    label    = {
+                        Text(
+                            text       = sev.replaceFirstChar { it.uppercase() },
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            fontSize   = 13.sp
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = accentColor,
+                        selectedLabelColor     = Color.White,
+                        containerColor         = Color.White.copy(alpha = 0.07f),
+                        labelColor             = Color.White.copy(alpha = 0.75f)
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled             = true,
+                        selected            = isSelected,
+                        selectedBorderColor = accentColor,
+                        borderColor         = Color.White.copy(alpha = 0.15f)
+                    )
+                )
+            }
+        }
     }
 }
 

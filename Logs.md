@@ -221,3 +221,48 @@
 
 **No contract deviations.**
 
+### 2026-08-14 IST — IMPLEMENT — Day 9: Contract & Security Hardening
+**Action:** Implemented critical contract, security, and sync fixes.
+**Status:** Complete. App builds and successfully installed on Pixel_6a emulator.
+
+**Fixes:**
+1. **P0.4.1 Contract Violation Fixed:** Removed `status` from `SosRequestDto`. It is device-side only and must never be serialised to the backend.
+2. **P0.4.2 Test Coverage:** Added `DtoSerializationTest` to prove `status` is structurally absent from network payloads.
+3. **P0.4.4 TTL Enforcement:** Updated `GatewaySyncWorker` to enforce a 72-hour (not 7-day) TTL via `SosConstants.TTL_SECONDS`.
+4. **P0.4.5 Sync Infinite Loop:** `GatewaySyncWorker` now explicitly enqueues `DeviceRegistrationWorker` on 401 before retrying to prevent an infinite loop.
+5. **Security 7.1 Compliance:** Restricted `RetrofitClientFactory` logging to `HEADERS` (was `BODY`) to prevent medical data and device JWTs from leaking into logcat.
+6. **Launch:** Successfully launched the application via ADB on the Pixel_6a AVD.
+
+---
+
+### 2026-08-14 IST — FIX PASS — Component C Architecture & Stability Fix Pass
+**Action:** Resolved audit findings, concurrency races, network security, and lifecycle handling.
+**Status:** Complete. BUILD SUCCESSFUL.
+
+**Fixes Implemented:**
+1. **Location Permission Race:** Re-architected `HomeScreen.kt` and `HomeViewModel.kt` to decouple SOS triggering from permission requests using a callback-based permission launcher (`triggerSosWithPermissionResult`). SOS is never created before permission status is known.
+2. **Network Security Config Isolation:** Moved cleartext exception exclusively into `app/src/debug/res/xml/network_security_config.xml` and debug manifest; release build enforces strict HTTPS.
+3. **Onboarding Skip Persistence:** Added `KEY_ONBOARDING_SKIPPED` in `DevicePreferences` and wired `OnboardingViewModel.skipOnboarding()` to prevent re-prompting on cold starts.
+4. **Blood Type Validation:** Implemented regex validation for standard blood group patterns (`O+`, `A-`, etc.) in `OnboardingViewModel.kt`.
+5. **Non-Blocking Startup:** Removed `runBlocking` from `MainActivity.kt` and replaced with async start destination resolution (`resolveStartDestinationAsync()`).
+6. **Status Screen Backend Guard:** Injected `DevicePreferences` into `StatusViewModel.kt` to guard against redundant polling if the device is offline or unregistered.
+7. **AuthInterceptor Precision:** Changed route matching from `.contains("/auth/device/register")` to `.endsWith("/auth/device/register")`.
+8. **TTL Cleanup Policy:** Documented routing coordination `TODO(Integration with A+B)` in `SosRequestDao.kt`.
+
+---
+
+### 2026-08-14 IST — HANDOFF & VERIFICATION — A+B Relay Handoff & Test Suite Verification
+**Action:** Produced Component A+B mesh relay handoff guide and verified full Android build suite.
+**Status:** Complete.
+
+**1. Handoff Document Authored:**
+- Created `COMPONENT_C_TO_AB_RELAY_HANDOFF.md` containing 25 structured sections outlining boundaries, interfaces, Room persistence ownership, manifest exchange, TTL policy, failure modes, battery requirements, and forbidden changes.
+
+**2. Test Coverage & Gradle Verification:**
+- Configured local Android SDK (`platforms;android-35`, `build-tools;35.0.0`) and updated `local.properties`.
+- Added unit & ViewModel tests:
+  - `GatewaySyncWorkerTest.kt` in `:data` (covers success, 401 retry, 500 backoff, deduplication, and TTL cleanup).
+  - `HomeViewModelTest.kt` in `:app` (covers permission granted/denied flows, fallback sentinel `0.0, 0.0`, and UI status).
+  - `OnboardingViewModelTest.kt` in `:app` (covers skip persistence and blood type validation).
+- Executed `./gradlew testDebugUnitTest` across all modules: **BUILD SUCCESSFUL**.
+- Executed `./gradlew :app:assembleDebug`: **BUILD SUCCESSFUL** (`app-debug.apk` 20.6 MB produced).

@@ -3,7 +3,7 @@
 > Component: Android App Shell  
 > **Master Source of Truth:** `day1-contracts-and-repo-setup.md` § 2. REST API Endpoints  
 > **This file follows the master blueprint exactly. Any proposed deviations are flagged explicitly.**  
-> **Last Updated:** 2026-08-13 (Day 8 — integration hardening complete)
+> **Last Updated:** 2026-08-14 (Fix pass complete & verified)
 
 ---
 
@@ -11,7 +11,7 @@
 ```
 /api/v1
 ```
-Full URL in dev: `http://<backend-host>:8000/api/v1`
+Full URL in dev: `http://10.0.2.2:8000/api/v1` (Debug cleartext config isolated to debug build)
 
 ---
 
@@ -22,9 +22,9 @@ Full URL in dev: `http://<backend-host>:8000/api/v1`
 
 | Field | Value |
 |-------|-------|
-| Auth | None |
+| Auth | None (`AuthInterceptor` explicitly skips requests ending with `/auth/device/register`) |
 | When called | First app launch only (checks stored `device_jwt` first) |
-| Called from | `DeviceRegistrationRepository` → triggered from `MainActivity` / `Application.onCreate()` |
+| Called from | `DeviceRegistrationWorker` → triggered from `MainActivity` / `Application.onCreate()` |
 
 **Request Body:**
 ```json
@@ -43,11 +43,12 @@ Full URL in dev: `http://<backend-host>:8000/api/v1`
 ```
 
 **Storage:** Both fields stored in `EncryptedSharedPreferences` under keys `pref_device_id` and `pref_device_jwt`.
+- Note on `device_id`: In offline mode before registration, a stable local UUID is used so offline SOS creation is never blocked. Upon registration, the backend `device_id` is persisted.
 
 **Error Handling:**
 - Network failure → retry with exponential backoff (WorkManager one-time request)
 - 4xx → log, do not crash; app operates in offline-only mode until registration succeeds
-- On 401 from any subsequent call → re-call this endpoint to refresh credentials
+- On 401 from any subsequent call → clear credentials and re-enqueue registration worker before retrying
 
 ---
 
@@ -87,8 +88,9 @@ Full URL in dev: `http://<backend-host>:8000/api/v1`
       "custom_message": "string | null",
       "contact_number": "string | null",
       "relay_hop_count": "integer",
-      "last_relayed_at": "string (ISO8601)",
-      "status": "string"
+      "last_relayed_at": "string (ISO8601)"
+      // NOTE: `status` is intentionally absent — it is DEVICE-SIDE ONLY (§1.2 rule C).
+      // It lives in Room (SosRequestEntity) and is never serialised to the backend.
     }
   ]
 }

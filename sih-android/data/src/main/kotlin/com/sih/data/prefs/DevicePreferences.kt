@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,8 +16,18 @@ import javax.inject.Singleton
  * and must be kept secure — stored in EncryptedSharedPreferences (AES256-GCM).
  *
  * Keys:
- *   pref_device_id  — the UUID assigned by the backend
- *   pref_device_jwt — the JWT used to authenticate SOS uploads
+ *   pref_device_id       — the UUID assigned by the backend after registration
+ *   pref_device_jwt      — the JWT used to authenticate SOS uploads
+ *   pref_installation_id — stable local UUID generated on first install (used as
+ *                          device_id fallback for offline SOS before registration)
+ *
+ * ## Device Identity Flow (P0.4.6)
+ * The Day 1 contract §1.2 defines device_id as "installation ID of originating phone"
+ * and §1.9 says it's "generated on first app install." To prevent multiple offline SOS
+ * messages from using different random IDs, we generate ONE stable installationId at
+ * first launch and persist it. After backend registration succeeds, SosRepository uses
+ * the backend-assigned device_id (pref_device_id) instead; the installationId is kept
+ * as a fallback for offline SOS created before registration completes.
  *
  * On 401 responses from any protected endpoint, callers should re-register
  * (call /auth/device/register again) to obtain a fresh jwt and call
@@ -27,10 +38,12 @@ class DevicePreferences @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     companion object {
-        private const val PREFS_NAME        = "sih_secure_device_prefs"
-        private const val KEY_DEVICE_ID     = "pref_device_id"
-        private const val KEY_DEVICE_JWT    = "pref_device_jwt"
-        private const val KEY_LAST_SOS_UUID = "pref_last_sos_uuid"
+        private const val PREFS_NAME          = "sih_secure_device_prefs"
+        private const val KEY_DEVICE_ID       = "pref_device_id"
+        private const val KEY_DEVICE_JWT      = "pref_device_jwt"
+        private const val KEY_LAST_SOS_UUID   = "pref_last_sos_uuid"
+        private const val KEY_INSTALLATION_ID = "pref_installation_id"
+        private const val KEY_ONBOARDING_SKIPPED = "pref_onboarding_skipped"
     }
 
     private val prefs: SharedPreferences by lazy {
@@ -70,6 +83,31 @@ class DevicePreferences @Inject constructor(
             .apply()
     }
 
+    // ── Stable local installation identity ────────────────────────────────────
+
+    /**
+     * Returns the stable local installation UUID.
+     *
+     * Generated ONCE at first call and persisted permanently in EncryptedSharedPreferences.
+     * Used as [device_id] in SOS records created before backend registration completes,
+     * ensuring that multiple offline SOS messages from the same installation always
+     * carry the same device identity (rule P0.4.6 — critical invariant).
+     *
+     * After registration succeeds, [getDeviceId()] (backend-assigned) should be
+     * preferred. This is kept as a permanent stable fallback.
+     *
+     * Contract reference: §1.2 device_id = "installation ID of originating phone"
+     * and §1.9 device_id = "UUID, generated on first app install."
+     */
+    fun getOrCreateInstallationId(): String {
+        val existing = prefs.getString(KEY_INSTALLATION_ID, null)
+        if (!existing.isNullOrBlank()) return existing
+
+        val generated = UUID.randomUUID().toString()
+        prefs.edit().putString(KEY_INSTALLATION_ID, generated).apply()
+        return generated
+    }
+
     // ── Last SOS UUID — survive process kill so Status screen persists ────────
 
     /**
@@ -90,5 +128,13 @@ class DevicePreferences @Inject constructor(
      */
     fun clearLastSosUuid() {
         prefs.edit().remove(KEY_LAST_SOS_UUID).apply()
+    }
+
+    // ── Onboarding ────────────────────────────────────────────────────────────
+
+    fun isOnboardingSkipped(): Boolean = prefs.getBoolean(KEY_ONBOARDING_SKIPPED, false)
+
+    fun setOnboardingSkipped(skipped: Boolean) {
+        prefs.edit().putBoolean(KEY_ONBOARDING_SKIPPED, skipped).apply()
     }
 }

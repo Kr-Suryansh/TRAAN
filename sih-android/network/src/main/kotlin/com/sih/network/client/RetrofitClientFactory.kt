@@ -16,7 +16,10 @@ import java.util.concurrent.TimeUnit
  * Not a singleton here — the Hilt [com.sih.network.di.NetworkModule] provides
  * the singleton instance. This keeps the client testable in isolation.
  *
- * Logging is BODY level for debug; callers should reduce this for release.
+ * Security (7.1): SOS payloads contain sensitive medical information (conditions,
+ * medications, allergies, emergency contacts). HTTP logging is capped at HEADERS
+ * even in debug mode to prevent medical data and device JWTs from appearing in
+ * logcat. Never set to BODY in any build variant.
  */
 object RetrofitClientFactory {
 
@@ -27,8 +30,10 @@ object RetrofitClientFactory {
     ): DisasterApi {
 
         val logging = HttpLoggingInterceptor().apply {
+            // HEADERS only — BODY would expose medical conditions, medications,
+            // allergies, emergency contacts, and device JWTs in logcat.
             level = if (isDebug) {
-                HttpLoggingInterceptor.Level.BODY
+                HttpLoggingInterceptor.Level.HEADERS
             } else {
                 HttpLoggingInterceptor.Level.NONE
             }

@@ -74,6 +74,10 @@ interface SosRequestDao {
      * Delete uploaded records whose last_relayed_at is older than [cutoffIso].
      * Call this periodically — do NOT delete records immediately after upload
      * since other phones may still need them from the relay mesh.
+     * 
+     * TODO(Integration with A+B): A+B must provide the routing policy to determine 
+     * when it is safe to delete pending_local or in_relay records without disrupting 
+     * the epidemic mesh. Currently we only safely delete UPLOADED records.
      */
     @Query(
         "DELETE FROM sos_request WHERE status = :uploadedStatus AND last_relayed_at < :cutoffIso"

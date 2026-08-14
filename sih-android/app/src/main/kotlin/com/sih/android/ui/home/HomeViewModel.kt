@@ -28,15 +28,22 @@ import kotlin.coroutines.resume
 enum class LocationStatus { IDLE, FETCHING, ACQUIRED, UNAVAILABLE }
 
 data class HomeUiState(
-    val isCreatingSos: Boolean              = false,
-    val createdSosUuid: String?             = null,
-    val errorMessage: String?              = null,
-    val locationStatus: LocationStatus     = LocationStatus.IDLE,
+    val isCreatingSos: Boolean               = false,
+    val createdSosUuid: String?              = null,
+    val errorMessage: String?               = null,
+    val locationStatus: LocationStatus      = LocationStatus.IDLE,
     // Optional field selections
     val selectedEmergencyType: EmergencyType = EmergencyType.UNSPECIFIED,
-    val customMessage: String              = "",
-    val peopleCount: String               = "",
-    val contactNumber: String             = "",
+    /**
+     * Optional severity hint (critical|high|medium|low) per §1.2.
+     * Null for quick SOS — set only when the user explicitly picks one
+     * from the detail section. Quick SOS omits severity per contract.
+     */
+    val selectedSeverityHint: String?        = null,
+    val customMessage: String               = "",
+    val peopleCount: String                = "",
+    val contactNumber: String              = "",
+    val peopleCountError: String?          = null,
 )
 
 @HiltViewModel
@@ -52,13 +59,8 @@ class HomeViewModel @Inject constructor(
     // ── Public entry-point called from the SOS button ──────────────────────────
 
     /**
-     * Entry point for an SOS tap.
-     *
-     * 1. Requests a one-shot GPS fix from FusedLocationProviderClient.
-     * 2. Falls back to (0.0, 0.0) if location is unavailable or permission denied.
-     * 3. NEVER blocks the SOS — no network call is made here.
-     *
-     * [isQuickSos] = true for the big red button; false for "Send with details".
+     * Entry point for an SOS tap when permission is ALREADY granted.
+     * NEVER blocks the SOS — no network call is made here.
      */
     fun triggerSos(isQuickSos: Boolean = true) {
         if (_uiState.value.isCreatingSos) return // guard against double-tap
@@ -67,6 +69,21 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             val (lat, lng, accuracy) = resolveLocation()
+            createSosInternal(lat, lng, accuracy, isQuickSos)
+        }
+    }
+
+    /**
+     * Entry point for an SOS tap when we had to request permission.
+     * Uses the result of the permission request to either fetch location or fall back.
+     */
+    fun triggerSosWithPermissionResult(isQuickSos: Boolean, isGranted: Boolean) {
+        if (_uiState.value.isCreatingSos) return // guard against double-tap
+
+        _uiState.update { it.copy(isCreatingSos = true, errorMessage = null, locationStatus = LocationStatus.FETCHING) }
+
+        viewModelScope.launch {
+            val (lat, lng, accuracy) = if (isGranted) resolveLocation() else Triple(0.0, 0.0, null)
             createSosInternal(lat, lng, accuracy, isQuickSos)
         }
     }
@@ -131,13 +148,32 @@ class HomeViewModel @Inject constructor(
             val msg     = _uiState.value.customMessage.trim().ifBlank { null }
             val contact = _uiState.value.contactNumber.trim().ifBlank { null }
 
+            // Validate people_count before submission (P1.6.3)
+            val countError = if (_uiState.value.peopleCount.isNotBlank()) {
+                val n = _uiState.value.peopleCount.toIntOrNull()
+                when {
+                    n == null       -> "Must be a number"
+                    n < 1           -> "Must be at least 1"
+                    n > 9999        -> "Value too large"
+                    else            -> null
+                }
+            } else null
+
+            if (countError != null) {
+                _uiState.update { it.copy(isCreatingSos = false, peopleCountError = countError) }
+                return@runCatching ""
+            }
+
+            // Severity is omitted on quick SOS (null); set only on detail SOS
+            val severity = if (!isQuickSos) _uiState.value.selectedSeverityHint else null
+
             sosRepository.createSos(
                 lat           = lat,
                 lng           = lng,
                 accuracyM     = accuracyM,
                 isQuickSos    = isQuickSos,
                 emergencyType = _uiState.value.selectedEmergencyType,
-                severityHint  = null,
+                severityHint  = severity,
                 peopleCount   = count,
                 customMessage = msg,
                 contactNumber = contact,
@@ -163,11 +199,21 @@ class HomeViewModel @Inject constructor(
     fun selectEmergencyType(type: EmergencyType) =
         _uiState.update { it.copy(selectedEmergencyType = type) }
 
+    /**
+     * Select severity hint for detail SOS.
+     * Passing the same value again deselects it (toggles to null).
+     * P1.6.1 — severity is always optional; never required even on detail SOS.
+     */
+    fun selectSeverityHint(hint: String) =
+        _uiState.update { s ->
+            s.copy(selectedSeverityHint = if (s.selectedSeverityHint == hint) null else hint)
+        }
+
     fun updateCustomMessage(msg: String) =
         _uiState.update { it.copy(customMessage = msg) }
 
     fun updatePeopleCount(count: String) =
-        _uiState.update { it.copy(peopleCount = count) }
+        _uiState.update { it.copy(peopleCount = count, peopleCountError = null) }
 
     fun updateContactNumber(number: String) =
         _uiState.update { it.copy(contactNumber = number) }

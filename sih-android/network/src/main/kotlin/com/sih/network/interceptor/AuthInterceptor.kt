@@ -21,7 +21,7 @@ class AuthInterceptor(
         val original = chain.request()
 
         // Skip auth for the registration endpoint
-        if (original.url.encodedPath.contains("auth/device/register")) {
+        if (original.url.encodedPath.endsWith("/auth/device/register")) {
             return chain.proceed(original)
         }
 

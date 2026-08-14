@@ -4,10 +4,13 @@ import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.google.android.gms.location.LocationServices
+import com.sih.data.SosConstants
 import com.sih.data.db.dao.SosRequestDao
 import com.sih.data.db.entity.SosRequestEntity
+import com.sih.data.di.enqueueDeviceRegistration
 import com.sih.data.model.SosStatus
 import com.sih.data.prefs.DevicePreferences
 import com.sih.network.api.DisasterApi
@@ -33,16 +36,20 @@ import kotlin.coroutines.resume
  *
  * Gateway mode: uploads EVERY record in the local store, not only the device's
  * own SOS. Any phone with internet is a potential gateway for records it received
- * via the relay mesh.
+ * via the relay mesh (rule F of the non-negotiable contract).
  *
  * Idempotency: safe to re-run. The backend deduplicates by UUID. Already-uploaded
  * UUIDs returned in [duplicate_uuids] are also marked as uploaded.
  *
  * Post-upload: records are marked [SosStatus.UPLOADED] but NOT deleted.
  * Other phones may still need them from the relay mesh. TTL-based deletion
- * is handled separately in [com.sih.data.repository.SosRepository].
+ * uses [SosConstants.TTL_HOURS] (72 h) — NOT 7 days (rule G, P0.4.4).
  *
- * On failure: WorkManager retries with exponential backoff (default policy).
+ * On 401: credentials are cleared, DeviceRegistrationWorker is enqueued, then
+ * this worker returns Result.retry() to allow the upload to succeed once
+ * re-registration completes (P0.4.5 — prevents the infinite retry loop).
+ *
+ * On other failure: WorkManager retries with exponential backoff (default policy).
  */
 @HiltWorker
 class GatewaySyncWorker @AssistedInject constructor(
@@ -51,13 +58,18 @@ class GatewaySyncWorker @AssistedInject constructor(
     private val sosRequestDao: SosRequestDao,
     private val disasterApi: DisasterApi,
     private val devicePreferences: DevicePreferences,
-    private val relayRepository: RelayRepository
+    private val relayRepository: RelayRepository,
+    private val workManager: WorkManager
 ) : CoroutineWorker(context, workerParams) {
 
     companion object {
         const val TAG = "GatewaySyncWorker"
-        const val WORK_NAME_PERIODIC = "gateway_sync_periodic"
+        const val WORK_NAME_PERIODIC  = "gateway_sync_periodic"
         const val WORK_NAME_IMMEDIATE = "gateway_sync_immediate"
+
+        /** Sentinel for unknown gateway location. Non-nullable per GatewayUploadBatch contract. */
+        private const val UNKNOWN_LAT_LNG = 0.0
+        private const val UNKNOWN_LNG = 0.0
     }
 
     private val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
@@ -68,7 +80,9 @@ class GatewaySyncWorker @AssistedInject constructor(
 
         // 1. Guard: must be registered before uploading
         if (!devicePreferences.isRegistered()) {
-            Log.w(TAG, "Device not registered — skipping sync")
+            Log.w(TAG, "Device not registered — skipping sync, re-triggering registration")
+            // Enqueue registration so the next sync can proceed
+            enqueueDeviceRegistration(workManager)
             return Result.retry()
         }
 
@@ -118,8 +132,8 @@ class GatewaySyncWorker @AssistedInject constructor(
                                 "${body.duplicateUuids.size} duplicates")
                     }
 
-                    // Enforce the TTL: purge records older than 7 days
-                    val cutoff = Instant.now().minusSeconds(7 * 24 * 3600)
+                    // P0.4.4 — enforce TTL using the centralized constant (72 hours, NOT 7 days)
+                    val cutoff = Instant.now().minusSeconds(SosConstants.TTL_SECONDS)
                     val cutoffIso = DateTimeFormatter.ISO_INSTANT.format(cutoff)
                     sosRequestDao.deleteExpiredUploaded(cutoffIso)
 
@@ -127,9 +141,14 @@ class GatewaySyncWorker @AssistedInject constructor(
                 }
 
                 response.code() == 401 -> {
-                    // JWT expired — clear credentials and trigger re-registration
-                    Log.w(TAG, "401 on batch upload — credentials expired, clearing")
+                    // P0.4.5 — Fix the 401 infinite loop:
+                    // Clear stale credentials AND enqueue re-registration before retrying.
+                    // Without the re-registration enqueue, the next retry would hit the
+                    // isRegistered() guard above and loop indefinitely.
+                    Log.w(TAG, "401 on batch upload — credentials expired; " +
+                            "clearing and re-triggering registration")
                     devicePreferences.clearCredentials()
+                    enqueueDeviceRegistration(workManager)
                     Result.retry()
                 }
 
@@ -153,9 +172,15 @@ class GatewaySyncWorker @AssistedInject constructor(
      * Returns the last known device location for the gateway_location field.
      *
      * Uses [FusedLocationProviderClient.lastLocation] — a cached, non-blocking read.
-     * Never delays or blocks the upload. Falls back to 0.0 / 0.0 if:
+     * Never delays or blocks the upload.
+     *
+     * Falls back to [UNKNOWN_LAT_LNG] / [UNKNOWN_LNG] sentinel if:
      *  - No cached location available (GPS off, cold start)
      *  - Location permission not granted
+     *
+     * The 0.0/0.0 sentinel is intentional per the Day 1 contract — the field is
+     * non-nullable in [GatewayUploadBatch]. Agent D is aware of this (flagged in
+     * ApiEndpoints.md). The upload must never be blocked for a missing location.
      */
     @android.annotation.SuppressLint("MissingPermission")
     private suspend fun getGatewayLocation(): LocationDto {
@@ -167,46 +192,52 @@ class GatewaySyncWorker @AssistedInject constructor(
                         if (location != null) {
                             cont.resume(LocationDto(lat = location.latitude, lng = location.longitude))
                         } else {
-                            Log.w(TAG, "No cached location — using 0.0/0.0 sentinel")
-                            cont.resume(LocationDto(lat = 0.0, lng = 0.0))
+                            Log.w(TAG, "No cached gateway location — using 0.0/0.0 sentinel")
+                            cont.resume(LocationDto(lat = UNKNOWN_LAT_LNG, lng = UNKNOWN_LNG))
                         }
                     }
                     .addOnFailureListener { e ->
                         Log.w(TAG, "Location fetch failed — using 0.0/0.0 sentinel", e)
-                        cont.resume(LocationDto(lat = 0.0, lng = 0.0))
+                        cont.resume(LocationDto(lat = UNKNOWN_LAT_LNG, lng = UNKNOWN_LNG))
                     }
             }
         } catch (e: Exception) {
             Log.w(TAG, "Location exception — using 0.0/0.0 sentinel", e)
-            LocationDto(lat = 0.0, lng = 0.0)
+            LocationDto(lat = UNKNOWN_LAT_LNG, lng = UNKNOWN_LNG)
         }
     }
 
-    /** Map Room entity → network DTO, stripping the device-side [status] field. */
+    /**
+     * Map Room entity → network DTO.
+     *
+     * P0.4.1 — [SosRequestDto] no longer has a `status` field. The device-side
+     * status lives exclusively in Room ([SosRequestEntity.status]) and must never
+     * be serialised to the backend.
+     */
     private fun SosRequestEntity.toDto(): SosRequestDto {
         val profileDto = medicalSnapshot?.let {
             runCatching { profileAdapter.fromJson(it) }.getOrNull()
         }
 
         return SosRequestDto(
-            uuid           = uuid,
-            deviceId       = deviceId,
-            createdAt      = createdAt,
-            location       = LocationDto(
-                lat        = locationLat,
-                lng        = locationLng,
-                accuracyM  = locationAccuracyM
+            uuid            = uuid,
+            deviceId        = deviceId,
+            createdAt       = createdAt,
+            location        = LocationDto(
+                lat         = locationLat,
+                lng         = locationLng,
+                accuracyM   = locationAccuracyM
             ),
-            isQuickSos     = isQuickSos,
-            emergencyType  = emergencyType,
-            severityHint   = severityHint,
-            peopleCount    = peopleCount,
-            medicalSnapshot= profileDto,
-            customMessage  = customMessage,
-            contactNumber  = contactNumber,
-            relayHopCount  = relayHopCount,
-            lastRelayedAt  = lastRelayedAt,
-            status         = status
+            isQuickSos      = isQuickSos,
+            emergencyType   = emergencyType,
+            severityHint    = severityHint,
+            peopleCount     = peopleCount,
+            medicalSnapshot = profileDto,
+            customMessage   = customMessage,
+            contactNumber   = contactNumber,
+            relayHopCount   = relayHopCount,
+            lastRelayedAt   = lastRelayedAt
+            // status intentionally omitted — device-side only (rule C)
         )
     }
 }
