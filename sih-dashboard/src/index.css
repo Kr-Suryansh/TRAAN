@@ -1,0 +1,333 @@
+/* ============================================================
+   sih-dashboard · src/index.css
+   Design system tokens and global styles.
+   Google Font: Inter (body) + JetBrains Mono (code/ids)
+   Color system: HSL-based, disaster-response optimised palette
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── Design Tokens ─────────────────────────────────────── */
+:root {
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Neutral grays */
+  --gray-950: hsl(220, 20%, 6%);
+  --gray-900: hsl(220, 18%, 9%);
+  --gray-850: hsl(220, 16%, 12%);
+  --gray-800: hsl(220, 14%, 15%);
+  --gray-700: hsl(220, 12%, 22%);
+  --gray-600: hsl(220, 10%, 32%);
+  --gray-500: hsl(220, 8%, 46%);
+  --gray-400: hsl(220, 8%, 60%);
+  --gray-300: hsl(220, 8%, 74%);
+  --gray-100: hsl(220, 10%, 92%);
+  --gray-50:  hsl(220, 12%, 97%);
+
+  /* Severity colors */
+  --critical:       hsl(0, 82%, 55%);
+  --critical-bg:    hsl(0, 82%, 10%);
+  --critical-border:hsl(0, 82%, 35%);
+  --high:           hsl(24, 90%, 52%);
+  --high-bg:        hsl(24, 90%, 10%);
+  --high-border:    hsl(24, 90%, 32%);
+  --medium:         hsl(45, 88%, 50%);
+  --medium-bg:      hsl(45, 88%, 9%);
+  --medium-border:  hsl(45, 88%, 30%);
+  --low:            hsl(158, 60%, 42%);
+  --low-bg:         hsl(158, 60%, 8%);
+  --low-border:     hsl(158, 60%, 25%);
+
+  /* Status colors */
+  --status-new:         hsl(213, 90%, 60%);
+  --status-acknowledged:hsl(45, 88%, 50%);
+  --status-dispatched:  hsl(158, 60%, 42%);
+  --status-resolved:    hsl(220, 8%, 46%);
+
+  /* Brand / action */
+  --accent:       hsl(213, 90%, 58%);
+  --accent-hover: hsl(213, 90%, 50%);
+  --danger:       hsl(0, 82%, 55%);
+
+  /* Surfaces */
+  --surface-0: var(--gray-950);
+  --surface-1: var(--gray-900);
+  --surface-2: var(--gray-850);
+  --surface-3: var(--gray-800);
+
+  /* Text */
+  --text-primary:   var(--gray-50);
+  --text-secondary: var(--gray-300);
+  --text-muted:     var(--gray-500);
+
+  /* Border */
+  --border: hsl(220, 14%, 20%);
+  --border-subtle: hsl(220, 14%, 17%);
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px hsl(0 0% 0% / 0.3), 0 1px 2px hsl(0 0% 0% / 0.2);
+  --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.35), 0 2px 4px hsl(0 0% 0% / 0.2);
+  --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.4), 0 4px 8px hsl(0 0% 0% / 0.25);
+
+  /* Transition */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+}
+
+/* ── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; font-size: 14px; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--surface-0);
+  color: var(--text-primary);
+  height: 100%;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+#root { height: 100%; display: flex; flex-direction: column; }
+
+/* ── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-700); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-600); }
+
+/* ── Typography ─────────────────────────────────────────── */
+h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: 1rem; font-weight: 600; }
+p  { line-height: 1.6; }
+
+/* ── Severity Badge ─────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.badge-critical { background: var(--critical-bg); color: var(--critical); border-color: var(--critical-border); }
+.badge-high     { background: var(--high-bg);     color: var(--high);     border-color: var(--high-border); }
+.badge-medium   { background: var(--medium-bg);   color: var(--medium);   border-color: var(--medium-border); }
+.badge-low      { background: var(--low-bg);       color: var(--low);      border-color: var(--low-border); }
+
+/* ── Status Badge ───────────────────────────────────────── */
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.status-new          { background: hsl(213, 90%, 15%); color: var(--status-new); }
+.status-acknowledged { background: hsl(45, 88%, 10%);  color: var(--status-acknowledged); }
+.status-dispatched   { background: hsl(158, 60%, 10%); color: var(--status-dispatched); }
+.status-resolved     { background: var(--gray-800);    color: var(--text-muted); }
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background var(--duration-fast) var(--ease),
+              transform var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+  white-space: nowrap;
+  user-select: none;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+.btn:active   { transform: translateY(1px); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 0 0 3px hsl(213 90% 58% / 0.2); }
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-danger:hover { background: hsl(0, 82%, 48%); box-shadow: 0 0 0 3px hsl(0 82% 55% / 0.2); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+.btn-ghost:hover { background: var(--surface-3); color: var(--text-primary); }
+
+.btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+.btn-lg { padding: 10px 22px; font-size: 0.92rem; }
+
+/* ── Cards ───────────────────────────────────────────────── */
+.card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Form inputs ─────────────────────────────────────────── */
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease);
+}
+.input:focus  { border-color: var(--accent); }
+.input::placeholder { color: var(--text-muted); }
+
+select.input { cursor: pointer; }
+
+/* ── Divider ─────────────────────────────────────────────── */
+.divider { height: 1px; background: var(--border-subtle); margin: 12px 0; }
+
+/* ── Loading skeleton ───────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Modal overlay ──────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: hsl(0 0% 0% / 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn var(--duration-fast) var(--ease);
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp var(--duration-normal) var(--ease);
+}
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Flags ───────────────────────────────────────────────── */
+.flag-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+.flag-icon.active { background: hsl(213, 90%, 12%); color: var(--accent); border-color: hsl(213, 90%, 28%); }
+
+/* ── Connection status banner ────────────────────────────── */
+.ws-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.ws-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ws-connected    .ws-dot { background: var(--low); box-shadow: 0 0 0 2px hsl(158 60% 42% / 0.25); animation: pulse 2s infinite; }
+.ws-disconnected .ws-dot { background: var(--gray-600); }
+.ws-error        .ws-dot { background: var(--high); }
+.ws-connecting   .ws-dot { background: var(--medium); animation: pulse 1s infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* ── Leaflet overrides ───────────────────────────────────── */
+.leaflet-container { font-family: var(--font-body) !important; }
+.leaflet-popup-content-wrapper {
+  background: var(--surface-2) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+.leaflet-popup-tip { background: var(--surface-2) !important; }
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 24px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.empty-state svg { opacity: 0.3; }
+
+/* ── Util ─────────────────────────────────────────────────── */
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mono     { font-family: var(--font-mono); }
