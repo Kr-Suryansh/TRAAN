@@ -10,7 +10,7 @@ coreKtx = "1.13.1"
 
 # Google Play Services — Nearby Connections API
 # Used by :relay for phone-to-phone BLE/WiFi-Direct relay
-nearbyConnections = "19.3.0"
+nearbyConnections = "19.2.0"
 
 # Kotlin Coroutines (Flow used in RelayApi.getRelayStore())
 coroutines = "1.8.1"

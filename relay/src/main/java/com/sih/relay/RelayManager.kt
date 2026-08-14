@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * The implementation of [RelayApi] — the single public entry point for :app into the relay module.
@@ -87,11 +88,31 @@ class RelayManager(
     private fun newRelayScope(): CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    /**
+     * Endpoints for which a connection attempt is currently pending or already connected.
+     *
+     * Guards against duplicate/simultaneous [requestConnection] attempts to the same
+     * endpoint (a source of STATUS_ENDPOINT_IO_ERROR / 8012 races when both phones
+     * discover each other at the same time). Thread-safe across Nearby callbacks.
+     */
+    private val pendingConnections: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    /**
+     * Endpoints that are currently connected (STATUS_OK) and reachable for payload
+     * propagation. Used by [propagateLocalSos] / [propagateSosToConnected] to push
+     * newly-created or newly-received SOSRequests to peers without waiting for a
+     * reconnect/manifest exchange. Thread-safe across Nearby callbacks.
+     */
+    private val connectedEndpoints: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
     // ── Connection lifecycle callbacks ────────────────────────────────────────
 
     private val connectionLifecycleCallback = object : ConnectionLifecycleCallback() {
 
         override fun onConnectionInitiated(endpointId: String, info: ConnectionInfo) {
+            // Mark this endpoint as handled so onEndpointFound won't re-request a
+            // connection to it while this connection is being established/accepted.
+            pendingConnections.add(endpointId)
             Log.d(TAG, "Connection initiated with $endpointId (${info.endpointName}). Auto-accepting...")
             connectionsClient.acceptConnection(endpointId, payloadCallback)
                 .addOnSuccessListener {
@@ -105,25 +126,33 @@ class RelayManager(
         override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
             when (result.status.statusCode) {
                 ConnectionsStatusCodes.STATUS_OK -> {
-                    // Day 3: start the manifest exchange handshake immediately on both sides.
+                    // Connected: keep the endpoint in pendingConnections so discovery
+                    // won't attempt a duplicate requestConnection while it is connected.
+                    connectedEndpoints.add(endpointId)
                     Log.i(TAG, "Connection established with endpoint: $endpointId. Initiating manifest exchange...")
                     relayScope.launch {
                         initiateManifestExchange(endpointId)
                     }
                 }
                 ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> {
+                    pendingConnections.remove(endpointId)
                     Log.w(TAG, "Connection rejected by endpoint: $endpointId")
                 }
                 ConnectionsStatusCodes.STATUS_ERROR -> {
+                    pendingConnections.remove(endpointId)
                     Log.e(TAG, "Connection error with endpoint: $endpointId (status: ${result.status.statusCode})")
                 }
                 else -> {
+                    pendingConnections.remove(endpointId)
                     Log.w(TAG, "Connection result ${result.status.statusCode} for endpoint: $endpointId")
                 }
             }
         }
 
         override fun onDisconnected(endpointId: String) {
+            // Endpoint is no longer connected — allow a future discovery event to reconnect.
+            pendingConnections.remove(endpointId)
+            connectedEndpoints.remove(endpointId)
             Log.d(TAG, "Disconnected from endpoint: $endpointId")
         }
     }
@@ -133,6 +162,13 @@ class RelayManager(
     private val endpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
 
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
+            // Guard: only initiate one connection attempt per endpoint. If a connection
+            // is already pending or established, ignore the duplicate discovery event
+            // to avoid simultaneous/duplicate requestConnection() races (8012).
+            if (!pendingConnections.add(endpointId)) {
+                Log.d(TAG, "Ignoring duplicate discovery for endpoint: $endpointId (connection pending or already connected)")
+                return
+            }
             Log.d(TAG, "Endpoint found: $endpointId (${info.endpointName}). Requesting connection...")
             connectionsClient.requestConnection(
                 LOCAL_ENDPOINT_NAME,
@@ -141,6 +177,9 @@ class RelayManager(
             ).addOnSuccessListener {
                 Log.d(TAG, "Connection request sent to endpoint: $endpointId")
             }.addOnFailureListener { e ->
+                // The request failed before a connection could be negotiated —
+                // allow a future discovery event to retry this endpoint.
+                pendingConnections.remove(endpointId)
                 Log.e(TAG, "Failed to request connection to endpoint: $endpointId", e)
             }
         }
@@ -256,7 +295,10 @@ class RelayManager(
     /**
      * Called when a [RelayPayloadCodec.TYPE_SOS] payload is received from a peer.
      *
-     * Deserializes the [SOSRequest] and passes it to [RelayDataSource.saveSosMessages].
+     * Deserializes the [SOSRequest], applies hop accounting via [RelayHopLogic]
+     * (increments relayHopCount, updates lastRelayedAt, transitions PENDING_LOCAL → IN_RELAY),
+     * and passes the updated copy to [RelayDataSource.saveSosMessages].
+     *
      * With the current stub DataSource the save is a no-op; the received SOS is logged
      * so the physical test is interpretable from Logcat.
      */
@@ -264,14 +306,75 @@ class RelayManager(
         relayScope.launch {
             try {
                 val sos = RelayPayloadCodec.decodeSos(bodyBytes)
+                val relayed = RelayHopLogic.onRelayReceive(sos, isoNow())
                 Log.i(TAG, "SOSRequest received from endpoint $endpointId: " +
-                        "uuid=${sos.uuid}, deviceId=${sos.deviceId}, hopCount=${sos.relayHopCount}")
-                dataSource.saveSosMessages(listOf(sos))
-                Log.d(TAG, "SOSRequest ${sos.uuid} forwarded to DataSource.saveSosMessages()")
+                        "uuid=${relayed.uuid}, deviceId=${relayed.deviceId}, " +
+                        "hopCount=${relayed.relayHopCount}, status=${relayed.status}")
+
+                // Echo-loop guard: only propagate a received SOS onward if it is NEW
+                // to this phone's store. Once a UUID is stored, later copies (echoes
+                // from other peers) are dropped via idempotent save and not re-broadcast.
+                val knownUuids = dataSource.getAllSosUuids()
+                val isNew = relayed.uuid !in knownUuids
+
+                dataSource.saveSosMessages(listOf(relayed))
+                Log.d(TAG, "SOSRequest ${relayed.uuid} forwarded to DataSource.saveSosMessages() (hopCount=${relayed.relayHopCount})")
+
+                if (isNew) {
+                    propagateSosToConnected(relayed, fromEndpointId = endpointId)
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error handling incoming SOSRequest from endpoint: $endpointId", e)
             }
         }
+    }
+
+    /**
+     * Day 4 multi-hop propagation: sends [sos] to every currently-connected peer,
+     * optionally excluding the endpoint it was just received from ([fromEndpointId]).
+     *
+     * Excluding the source endpoint prevents a hop from sending a received SOS
+     * straight back to the device it came from; the new-UUID guard in
+     * [handleIncomingSos] already prevents indefinite echo loops.
+     *
+     * Same wire format and send mechanism as [sendMissingSos].
+     */
+    private fun propagateSosToConnected(sos: SOSRequest, fromEndpointId: String? = null) {
+        for (endpointId in connectedEndpoints) {
+            if (endpointId == fromEndpointId) continue
+            relayScope.launch {
+                try {
+                    val encoded = RelayPayloadCodec.encodeSos(sos)
+                    connectionsClient.sendPayload(endpointId, Payload.fromBytes(encoded))
+                        .addOnSuccessListener {
+                            Log.i(TAG, "SOSRequest ${sos.uuid} (hopCount=${sos.relayHopCount}) sent to endpoint: $endpointId (${encoded.size} bytes)")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "Failed to send SOSRequest ${sos.uuid} to endpoint: $endpointId", e)
+                        }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error encoding/sending SOSRequest ${sos.uuid} to endpoint: $endpointId", e)
+                }
+            }
+        }
+    }
+
+    /**
+     * Day 4: pushes a freshly-created LOCAL SOS to every currently-connected peer so it
+     * propagates immediately (A→B→C) without requiring a reconnect/manifest exchange.
+     *
+     * Called by :app AFTER the SOS has been saved locally. The SOS is sent as-is
+     * (relayHopCount = 0, status = PENDING_LOCAL); each receiving peer's
+     * [handleIncomingSos] applies [RelayHopLogic] so the hop count increments there.
+     */
+    suspend fun propagateLocalSos(sos: SOSRequest) {
+        if (connectedEndpoints.isEmpty()) {
+            Log.i(TAG, "propagateLocalSos: no connected endpoints — SOS ${sos.uuid} stays local only")
+            return
+        }
+        Log.i(TAG, "propagateLocalSos: broadcasting SOS ${sos.uuid} (hopCount=${sos.relayHopCount}, status=${sos.status}) " +
+                "to ${connectedEndpoints.size} connected endpoint(s)")
+        propagateSosToConnected(sos)
     }
 
     /**
@@ -362,6 +465,10 @@ class RelayManager(
         relayScope.cancel()
         // Recreate immediately so startRelay() can be called again without constructing a new RelayManager.
         relayScope = newRelayScope()
+
+        // Clear connection-state tracking so a subsequent startRelay() starts fresh.
+        pendingConnections.clear()
+        connectedEndpoints.clear()
 
         Log.i(TAG, "Stopping Nearby Connections advertising, discovery, and endpoints...")
         try {
