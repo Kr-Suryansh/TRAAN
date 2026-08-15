@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import List, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from google.genai import types
 from app.models.schemas import SOSRequest, Incident, SeverityEnum, Flags
 from app.services.ai.client import get_client
@@ -77,12 +77,21 @@ def generate_incident_summary(sos_reports: List[SOSRequest]) -> Dict[str, Any]:
             ),
         )
         
+        if not response.text:
+            raise ValueError("Empty response from Gemini")
+            
         # Parse the JSON string back into a dict
         result = json.loads(response.text)
         
         # Validate through Pydantic to ensure enums and types are perfectly correct
         validated_result = IncidentSummaryOutput(**result)
         
+        # Manual extra constraints since Gemini schema doesn't support them fully
+        if validated_result.estimated_people_affected < 0:
+            raise ValueError("estimated_people_affected cannot be negative")
+        if len(validated_result.ai_summary) > 1000:
+            raise ValueError("ai_summary exceeds maximum length")
+            
         return {
             "ai_summary": validated_result.ai_summary,
             "flags": validated_result.flags.model_dump(),
@@ -90,8 +99,11 @@ def generate_incident_summary(sos_reports: List[SOSRequest]) -> Dict[str, Any]:
             "severity": validated_result.severity.value
         }
         
+    except json.JSONDecodeError as e:
+        logger.error(f"Gemini API returned malformed JSON: {e}")
+        return _get_fallback_summary(sos_reports)
     except Exception as e:
-        logger.error(f"Gemini API call failed: {e}")
+        logger.error(f"Gemini API call failed or validation error: {e}")
         return _get_fallback_summary(sos_reports)
 
 def _get_fallback_summary(sos_reports: List[SOSRequest] = None) -> Dict[str, Any]:

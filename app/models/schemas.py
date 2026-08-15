@@ -74,6 +74,7 @@ class Flags(BaseModel):
     structural_damage: bool = False
 
 class RecommendedResource(BaseModel):
+    resource_id: Optional[str] = None
     resource_type: str
     quantity: int
     reasoning: str
