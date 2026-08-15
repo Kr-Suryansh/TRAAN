@@ -281,3 +281,22 @@ None of these prevented the eventual successful connections and SOS propagation.
 
 ---
 
+## 2026-08-15 — Day 5: Foreground Service + Duty Cycling — 3-Device Relay Validation (PASSED)
+
+Topology: A (SOS source) → B (relay) → C (next relay/node).
+
+Validated flow:
+1. Phone A generated an SOSRequest — UUID `37cb7ba8-580c-4bdf-81f3-37392d73e2df`.
+2. A successfully sent the SOS to B.
+3. B successfully received and relayed the same SOS onward.
+4. C successfully received the same UUID from B.
+5. C received it with `relayHopCount = 2` and `status = IN_RELAY`.
+6. The message was forwarded to `DataSource.saveSosMessages()` on C.
+7. The test demonstrates the intended A → B → C multi-hop propagation path.
+8. The relay remained operational through the foreground service and duty-cycle scan windows.
+9. Nearby Connections advertising/discovery and manifest exchange succeeded between the nodes.
+
+**Result: PASS (Complete).** Day 5 is COMPLETE — 3-device A → B → C multi-hop relay validated end to end under the foreground service + duty-cycle scan windows.
+
+---
+

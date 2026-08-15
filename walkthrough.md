@@ -341,4 +341,44 @@ None of these prevented the eventual successful connections and SOS propagation.
 
 ---
 
-*Next: Day 5 — Foreground service + duty cycling.*
+## Day 5 — Foreground Service + Duty Cycling
+
+**Date:** 2026-08-14
+**Scope:** A + B (`:relay` + temporary `:app` scaffolding)
+
+### What was built
+
+1. **`DutyCycler`** (`relay/src/main/java/com/sih/relay/DutyCycler.kt`) — pure Kotlin duty-cycle loop that toggles ONLY the scan/advertise window: ~10s ACTIVE then ~40s SLEEP, per `day1-contracts §6.1`. Deliberately decoupled from SOS state — the relay store and established connections survive window close. Timing and delay are injectable for deterministic JVM tests.
+2. **`RelayManager.startScanWindow()` / `stopScanWindow()`** (`internal`, idempotent, guarded by a `scanningWindow` flag) — the Day 5 battery lever. Opening a window starts advertising + discovery; closing it stops only advertising + discovery, keeping connected endpoints alive. `startRelay()`/`stopRelay()` now delegate to these; Day 2–4 semantics unchanged.
+3. **`RelayForegroundService`** (`relay/.../service/RelayForegroundService.kt`) — owns `RelayManager` + `DutyCycler`, `START_STICKY`, `exported=false`, `foregroundServiceType="connectedDevice"`, local `Binder` exposing the manager + data source. `ACTION_STOP` stops the relay; `onDestroy` stops duty cycle + relay + scope. No Hilt — uses the `RelayDataSourceProvider` seam.
+4. **`RelayNotification`** (`relay/.../service/RelayNotification.kt`) — low-priority ongoing channel "Relay Service", `android.R.drawable.ic_menu_mylocation` icon (library ships no app resources yet).
+5. **`RelayDataSourceProvider`** (`relay/.../service/RelayDataSourceProvider.kt`) — process-wide holder so `:app`'s temporary `InMemoryRelayStore` reaches the `:relay` service without a DI framework. Component C replaces this with Hilt.
+6. **Manifest** — `<service android:name=".service.RelayForegroundService" android:exported="false" android:foregroundServiceType="connectedDevice"/>` merged into `:app` (verified in merged manifest).
+7. **`MainActivity`** (temporary Day 5 scaffold) — sets `RelayDataSourceProvider.dataSource = InMemoryRelayStore`, binds to the service, Start/Stop now start/stop the *service* (relay + duty cycle in one action). Inject Test SOS preserved.
+
+### What was tested (automated)
+
+- **`DutyCyclerTest`**: 8 new deterministic JVM tests (virtual time via `TestScope`) — window opens first, closes after active duration, reopens after sleep, full multi-window cycles, state stays ACTIVE during window, `start()` idempotency, `stop()` halts loop and blocks further windows, `isRunning=false` before start.
+- **Full `:relay` suite: 64 tests PASS** (`DutyCyclerTest` 8, `RelayHopLogicTest` 12, `RelayModelsTest` 21, `RelayPayloadCodecTest` 23 — 0 failures/errors).
+- **APK build**: `:app:assembleDebug -x lint -x lintDebug` → `BUILD SUCCESSFUL` (`app-debug.apk`). Merged manifest confirms `RelayForegroundService` with `foregroundServiceType="connectedDevice"` + `FOREGROUND_SERVICE`/`FOREGROUND_SERVICE_CONNECTED_DEVICE` permissions.
+
+### Physical device testing (3-device, A → B → C)
+
+Topology: A (SOS source) → B (relay) → C (next relay/node).
+
+Validated flow:
+1. Phone A generated an SOSRequest — UUID `37cb7ba8-580c-4bdf-81f3-37392d73e2df`.
+2. A successfully sent the SOS to B.
+3. B successfully received and relayed the same SOS onward.
+4. C successfully received the same UUID from B.
+5. C received it with `relayHopCount = 2` and `status = IN_RELAY`.
+6. The message was forwarded to `DataSource.saveSosMessages()` on C.
+7. The test demonstrates the intended A → B → C multi-hop propagation path.
+8. The relay remained operational through the foreground service and duty-cycle scan windows.
+9. Nearby Connections advertising/discovery and manifest exchange succeeded between the nodes.
+
+**Day 5 result: PASS (Complete).** 3-device A → B → C multi-hop relay validated end to end under the foreground service + duty-cycle scan windows.
+
+---
+
+*Next: Day 6 — Runtime permissions (Nearby) + relay hardening.*

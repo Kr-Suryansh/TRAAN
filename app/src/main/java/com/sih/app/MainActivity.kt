@@ -1,8 +1,13 @@
 package com.sih.app
 
 import android.app.Activity
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.graphics.Color
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import android.view.ViewGroup
 import android.view.Window
@@ -15,6 +20,8 @@ import com.sih.relay.model.EmergencyType
 import com.sih.relay.model.SOSRequest
 import com.sih.relay.model.SOSStatus
 import com.sih.relay.model.SosLocation
+import com.sih.relay.service.RelayDataSourceProvider
+import com.sih.relay.service.RelayForegroundService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Temporary Day 2+ Activity scaffolding for testing Nearby Connections.
  *
  * ═══════════════════════════════════════════════════════════════════════════════
- * TEMPORARY DAY 4 PHYSICAL-TEST SCAFFOLDING — NOT PRODUCTION CODE.
+ * TEMPORARY DAY 4/5 PHYSICAL-TEST SCAFFOLDING — NOT PRODUCTION CODE.
  * ═══════════════════════════════════════════════════════════════════════════════
  *
  * Day 4 additions (3-phone A→B→C relay test), all clearly temporary:
@@ -41,11 +48,17 @@ import java.util.concurrent.ConcurrentHashMap
  *     (relayHopCount = 0, status = PENDING_LOCAL) so the A→B→C hop progression
  *     (0 → 1 → 2) can be physically verified.
  *
- * No production architecture was changed. RelayApi and RelayDataSource are untouched.
- * Existing Day 1–3 behavior (Start Relay / Stop Relay) is preserved verbatim.
- * ═══════════════════════════════════════════════════════════════════════════════
+ * Day 5 changes (foreground service + duty cycling), all temporary:
+ *   - The relay now runs inside [RelayForegroundService] (owns RelayManager +
+ *     InMemoryRelayStore + DutyCycler) instead of being created directly here.
+ *   - MainActivity sets RelayDataSourceProvider.dataSource = its InMemoryRelayStore,
+ *     starts the service, and binds to it to reach the manager for Start/Stop/Inject.
+ *   - Start Relay → service start (foreground + duty cycle). The radio duty-cycles
+ *     ~10s active / ~40s sleep, verified via Logcat "Opening/Closing scan window".
  *
+ * No production architecture was changed. RelayApi and RelayDataSource are untouched.
  * Component C will replace this Activity with Jetpack Compose UI.
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
 class MainActivity : Activity() {
 
@@ -58,6 +71,27 @@ class MainActivity : Activity() {
     /** Temporary Day 4 in-memory store — test scaffolding only. */
     private lateinit var relayStore: InMemoryRelayStore
 
+    private var serviceBound = false
+    private var bindRequested = false
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            val localBinder = binder as? RelayForegroundService.LocalBinder
+            if (localBinder == null) {
+                Log.e(TAG, "onServiceConnected: unexpected binder type")
+                return
+            }
+            relayManager = localBinder.getRelayManager()
+            serviceBound = true
+            Log.i(TAG, "Bound to RelayForegroundService. RelayManager available.")
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            serviceBound = false
+            Log.w(TAG, "Disconnected from RelayForegroundService")
+        }
+    }
+
     /** Scope for the temporary Day 4 inject button. Cancelled in onDestroy. */
     private val testScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -66,10 +100,10 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         Log.i(TAG, "MainActivity onCreate starting...")
 
-        // Temporary Day 4 test store: retains received SOSRequests in memory so
-        // multi-hop (A→B→C) relay works without :data / Room.
+        // Temporary Day 4 test store: retained in memory so multi-hop (A→B→C)
+        // relay works without :data / Room. Shared with the service via the provider.
         relayStore = InMemoryRelayStore()
-        relayManager = RelayManager(this, relayStore)
+        RelayDataSourceProvider.dataSource = relayStore
 
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -82,7 +116,7 @@ class MainActivity : Activity() {
         }
 
         val tvTitle = TextView(this).apply {
-            text = "Day 4 Relay Test Scaffold"
+            text = "Day 5 Relay Test Scaffold"
             setTextColor(Color.WHITE)
             textSize = 20f
             setPadding(0, 0, 0, 32)
@@ -103,7 +137,9 @@ class MainActivity : Activity() {
             layoutParams = buttonParams
             setOnClickListener {
                 Log.i(TAG, "Start Relay button clicked")
-                relayManager.startRelay()
+                // The service owns RelayManager + DutyCycler: starting it begins
+                // the relay AND the ~10s/~40s duty cycle in one action.
+                RelayForegroundService.start(this@MainActivity)
             }
         }
 
@@ -115,7 +151,7 @@ class MainActivity : Activity() {
             layoutParams = buttonParams
             setOnClickListener {
                 Log.i(TAG, "Stop Relay button clicked")
-                relayManager.stopRelay()
+                RelayForegroundService.stop(this@MainActivity)
             }
         }
 
@@ -134,7 +170,11 @@ class MainActivity : Activity() {
                 testScope.launch {
                     relayStore.saveSosMessages(listOf(injected))
                     Log.i(TAG, "Store now holds ${relayStore.getAllSosUuids().size} SOS UUID(s)")
-                    relayManager.propagateLocalSos(injected)
+                    if (::relayManager.isInitialized) {
+                        relayManager.propagateLocalSos(injected)
+                    } else {
+                        Log.w(TAG, "Inject skipped: RelayManager not yet bound")
+                    }
                 }
             }
         }
@@ -148,11 +188,22 @@ class MainActivity : Activity() {
         Log.i(TAG, "MainActivity onCreate completed successfully")
     }
 
+    override fun onStart() {
+        super.onStart()
+        Log.i(TAG, "Binding to RelayForegroundService...")
+        val serviceIntent = Intent(this, RelayForegroundService::class.java)
+        bindRequested = true
+        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         testScope.cancel()
-        if (::relayManager.isInitialized) {
-            relayManager.stopRelay()
+        if (bindRequested) {
+            unbindService(serviceConnection)
+            serviceBound = false
+            bindRequested = false
+            Log.i(TAG, "Unbound from RelayForegroundService")
         }
     }
 

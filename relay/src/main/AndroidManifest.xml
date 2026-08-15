@@ -47,7 +47,28 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
 
+    <!-- Notifications (Android 13+ / API 33+): without this, the foreground
+         service notification cannot appear in the shade. Static declaration only —
+         the runtime permission prompt is Day 6 work. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Wake lock — keeps CPU awake during active relay transfers -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application>
+
+        <!--
+            Day 5 — RelayForegroundService.
+            - foregroundServiceType="connectedDevice" matches the runtime permission
+              FOREGROUND_SERVICE_CONNECTED_DEVICE declared above (Nearby/Bluetooth use).
+            - exported="false": only our own app starts/stops it.
+            - Lives in the library manifest so it merges into :app automatically.
+        -->
+        <service
+            android:name=".service.RelayForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+    </application>
 
 </manifest>

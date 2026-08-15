@@ -105,6 +105,18 @@ class RelayManager(
      */
     private val connectedEndpoints: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
+    /**
+     * True while advertising + discovery are currently active.
+     *
+     * Guard for [startScanWindow]/[stopScanWindow] so the Day 5 duty cycler (and
+     * repeated startRelay() calls) cannot double-start or double-stop the radio.
+     * Only the advertising/discovery window is toggled — established connections,
+     * pending connection state, and the SOS store are deliberately left untouched
+     * when a scan window closes (battery sleep).
+     */
+    @Volatile
+    private var scanningWindow = false
+
     // ── Connection lifecycle callbacks ────────────────────────────────────────
 
     private val connectionLifecycleCallback = object : ConnectionLifecycleCallback() {
@@ -436,7 +448,26 @@ class RelayManager(
     // ── Public RelayApi Implementation ────────────────────────────────────────
 
     override fun startRelay() {
-        Log.i(TAG, "startRelay() invoked. Starting Nearby Connections advertising & discovery (P2P_CLUSTER)...")
+        Log.i(TAG, "startRelay() invoked. Starting relay (advertising + discovery)...")
+        startScanWindow()
+    }
+
+    /**
+     * Internal (Day 5): opens the scan/advertise window.
+     *
+     * Starts Nearby advertising + discovery (P2P_CLUSTER). Idempotent — guarded by
+     * [scanningWindow] so the duty cycler and startRelay() cannot double-start.
+     *
+     * Established connections and the SOS store are NOT touched; closing a window
+     * via [stopScanWindow] only silences the radio for battery.
+     */
+    internal fun startScanWindow() {
+        if (scanningWindow) {
+            Log.d(TAG, "startScanWindow() ignored — window already open")
+            return
+        }
+        scanningWindow = true
+        Log.i(TAG, "Opening scan window. Starting Nearby Connections advertising & discovery (P2P_CLUSTER)...")
 
         connectionsClient.startAdvertising(
             LOCAL_ENDPOINT_NAME,
@@ -460,6 +491,31 @@ class RelayManager(
         }
     }
 
+    /**
+     * Internal (Day 5): closes the scan/advertise window.
+     *
+     * Stops Nearby advertising + discovery so the radio is idle during the duty
+     * cycle's sleep period. Idempotent — guarded by [scanningWindow].
+     *
+     * Deliberately does NOT stop endpoints: already-connected peers stay connected
+     * across the sleep so SOS propagation over live links is uninterrupted, and
+     * the mesh can discover new peers again when the next window opens.
+     */
+    internal fun stopScanWindow() {
+        if (!scanningWindow) {
+            Log.d(TAG, "stopScanWindow() ignored — window already closed")
+            return
+        }
+        scanningWindow = false
+        Log.i(TAG, "Closing scan window. Stopping Nearby advertising & discovery (connections kept)...")
+        try {
+            connectionsClient.stopAdvertising()
+            connectionsClient.stopDiscovery()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping advertising/discovery", e)
+        }
+    }
+
     override fun stopRelay() {
         Log.i(TAG, "stopRelay() invoked. Cancelling relay coroutine scope...")
         relayScope.cancel()
@@ -469,6 +525,7 @@ class RelayManager(
         // Clear connection-state tracking so a subsequent startRelay() starts fresh.
         pendingConnections.clear()
         connectedEndpoints.clear()
+        scanningWindow = false
 
         Log.i(TAG, "Stopping Nearby Connections advertising, discovery, and endpoints...")
         try {
