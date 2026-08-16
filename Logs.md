@@ -300,3 +300,42 @@ Validated flow:
 
 ---
 
+## 2026-08-15 — Day 6: Room Persistence + Permission Preflight + Relay Hardening — 3-Device Validation (PASSED)
+
+Day 6 covered the A+B roadmap item (real-device friction: permission prompts + the Android requirement to explicitly ask the user to turn Bluetooth/Wi-Fi on) plus the Room persistence integration.
+
+### Day 6 implementation
+- `:data` — Room layer ported from Component C: entities, DAOs, `AppDatabase`, `RoomConverters`, model enums; `DevicePreferences` (de-Hilted device identity); `SosRequestMapper` (relay model ↔ Room entity); `RoomRelayDataSource` (implements `RelayDataSource` against Room).
+- `relay` — `RelayPermissionRequirements` (version-aware permission matrix for Nearby/BT/Wi-Fi); startup hardening of `RelayManager` + `RelayForegroundService` (in-memory fallback store only used when the data-source seam is absent).
+- `app` — `MainActivity` now builds `AppDatabase` (`sih_local.db`) + `RoomRelayDataSource` and sets it on `RelayDataSourceProvider`; "Start Relay" goes through a permission preflight (runtime permission requests + Bluetooth enable prompt) before starting the service; on-screen status text added.
+
+### Automated verification
+- `gradlew.bat :app:assembleDebug :data:testDebugUnitTest :relay:testDebugUnitTest -x lint -x lintDebug` → BUILD SUCCESSFUL.
+- **75 JVM tests, 0 failures** (64 relay: DutyCycler 8, RelayHopLogic 12, RelayModels 21, RelayPayloadCodec 23; 11 data: RoomRelayDataSource 6, SosRequestMapper 5).
+
+### Physical three-device validation (A → B → C), Room-backed store
+Topology: A (SOS source) → B (relay) → C (next relay/node). All nodes ran the Room-backed store (not the empty stub used in Day 3–5).
+
+Observed flow:
+1. **A** generated an SOS — UUID `e9407a8a-ae3c-461c-b23d-4633197db5fa` — stored it in Room and logged:
+   `Room now holds 1 SOS UUID(s)`
+2. **B** received the same UUID with `relayHopCount = 1`, `status = IN_RELAY`, and logged:
+   `SOSRequest e9407a8a-... forwarded to DataSource.saveSosMessages() (hopCount=1)`
+3. **B** subsequently had that UUID in its known-UUID manifest state (advertised it to a peer and sent the SOS to an endpoint that reported 0 known UUIDs).
+4. **C** received the same UUID with `relayHopCount = 2`, `status = IN_RELAY`, and logged:
+   `SOSRequest e9407a8a-... forwarded to DataSource.saveSosMessages() (hopCount=2)`
+
+**Result: PASS.** Non-empty SOS propagated through the full A → B → C chain and was written through the Room-backed `saveSosMessages()` path on B and C.
+
+### C persistence verification (process restart)
+After stopping/clearing the C app process and launching it again:
+- C logged: `Room-backed RelayDataSource wired: sih_local.db`
+- A new local SOS was injected: UUID `27a28ece-ce67-46dd-a456-f424f8b67933`
+- C logged: `Room now holds 2 SOS UUID(s)`
+
+Interpretation (as documented, not inferred beyond the logs): the original relayed SOS (`e9407a8a-...`) survived the C process restart, because the new injection resulted in Room containing **2** UUIDs rather than only the newly created one. This verifies Room persistence of a relayed SOS across an app process restart on the receiving node.
+
+**Result: PASS (Complete).** Day 6 is COMPLETE — Room persistence, permission preflight, and relay hardening verified: 75 automated tests + 3-device A → B → C relay with a non-empty SOS persisted to Room, surviving a process restart on C.
+
+---
+

@@ -381,4 +381,65 @@ Validated flow:
 
 ---
 
-*Next: Day 6 — Runtime permissions (Nearby) + relay hardening.*
+## Day 6 — Room Persistence + Permission Preflight + Relay Hardening
+
+**Date:** 2026-08-15
+**Scope:** A + B (`:relay`, `:data`, `:app`)
+
+### Goal
+
+Close the real-device friction gap (roadmap Day 6): the app must ask the user for the runtime
+permissions Android requires and explicitly ask the user to enable Bluetooth/Wi-Fi rather than
+doing so silently. Also replace the temporary in-memory store with real Room persistence so a
+relayed SOS is durable.
+
+### What was built
+
+#### `:data` — Room persistence layer
+- Room entities + DAOs + `AppDatabase` (`sih_local.db`), `RoomConverters`, model enums (ported from Component C, schema-frozen).
+- `DevicePreferences` — de-Hilted encrypted device identity.
+- `SosRequestMapper` — relay model ↔ Room entity (single mapping point).
+- `RoomRelayDataSource` — implements `RelayDataSource` against Room (`saveSosMessages` via `insertSos` IGNORE, `getAllSosUuids`, `getMissingSos`, `observeAllSos` derived from the DAO count flow).
+
+#### `relay` — permission helper + hardening
+- `RelayPermissionRequirements` — version-aware matrix of required runtime permissions and Bluetooth/Wi-Fi enable-intent helpers.
+- Startup hardening of `RelayManager` + `RelayForegroundService` (data-source seam null-safe; in-memory fallback store only when the seam is absent).
+
+#### `app` — preflight + Room wiring
+- `MainActivity` builds `AppDatabase` + `RoomRelayDataSource` and sets it on `RelayDataSourceProvider` (logs `Room-backed RelayDataSource wired: sih_local.db`).
+- "Start Relay" now runs a preflight: request any missing runtime permissions (`onRequestPermissionsResult`), then prompt to enable Bluetooth (`onActivityResult`), then start the foreground service. On-screen status text added.
+- "Inject Test SOS" saves through Room and logs `Room now holds N SOS UUID(s)`.
+
+### Architecture maintained
+- `:relay` still has zero dependency on `:data`, Room, or `:network`; `RelayApi`/`RelayDataSource` unchanged; wire format unchanged.
+- No Hilt; the `RelayDataSourceProvider` seam is preserved (Component C replaces it with Hilt).
+
+### What was tested (automated)
+- **75 JVM tests PASS, 0 failures** (64 relay: DutyCycler 8, RelayHopLogic 12, RelayModels 21, RelayPayloadCodec 23; 11 data: RoomRelayDataSource 6, SosRequestMapper 5).
+- **Build**: `gradlew.bat :app:assembleDebug :data:testDebugUnitTest :relay:testDebugUnitTest -x lint -x lintDebug` → `BUILD SUCCESSFUL`.
+
+### Physical device validation (3-device, A → B → C, Room-backed store)
+
+Topology: A (SOS source) → B (relay) → C (next relay/node). All nodes used the Room-backed store.
+
+1. A generated an SOS — UUID `e9407a8a-ae3c-461c-b23d-4633197db5fa` — stored it in Room and logged `Room now holds 1 SOS UUID(s)`.
+2. B received the same UUID with `relayHopCount = 1`, `status = IN_RELAY`, and logged `forwarded to DataSource.saveSosMessages()`.
+3. B had the UUID in its known-UUID manifest state and sent that SOS to a peer with 0 known UUIDs.
+4. C received the same UUID with `relayHopCount = 2`, `status = IN_RELAY`, and logged `forwarded to DataSource.saveSosMessages()`.
+
+**Result: PASS.** Non-empty SOS propagated A → B → C and was written through the Room-backed save path on B and C.
+
+### Persistence-across-restart verification (device C)
+
+After stopping/clearing the C app process and relaunching:
+- C logged `Room-backed RelayDataSource wired: sih_local.db`.
+- A new local SOS was injected (UUID `27a28ece-ce67-46dd-a456-f424f8b67933`).
+- C logged `Room now holds 2 SOS UUID(s)`.
+
+Interpretation: the original relayed SOS (`e9407a8a-...`) survived the C process restart, because the
+new injection produced 2 UUIDs in Room, not just the newly created one. This verifies that a relayed
+SOS persisted in Room on the receiving node across a process restart.
+
+**Day 6 result: PASS (Complete).** Room persistence, permission preflight, and relay hardening are
+verified: 75 automated tests + 3-device A → B → C relay with a non-empty SOS persisted to Room and
+surviving a process restart on C.

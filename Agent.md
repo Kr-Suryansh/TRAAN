@@ -18,6 +18,8 @@
 | **Day 2 status** | Nearby Connections P2P proof — physically verified on two devices |
 | **Day 3 status** | Manifest exchange & UUID diffing — physically verified on two devices (Android 17 & Android 15) |
 | **Day 4 status** | 3-phone multi-hop relay (A → B → C) — COMPLETE and physically verified |
+| **Day 5 status** | Foreground service + duty cycling — COMPLETE and physically verified (3-device) |
+| **Day 6 status** | Room persistence + permission preflight + relay hardening — COMPLETE, physically verified (3-device + persistence-across-restart on C) |
 
 ---
 
@@ -81,12 +83,25 @@ exact Pixel 8 logcat sequence.
 - **Physical (3 devices)**: Verified the A → B → C multi-hop flow (see `Logs.md`). SOS created on A at `relayHopCount=0`/`PENDING_LOCAL`; B received it at `relayHopCount=1`/`IN_RELAY` and saved it; C received it at `relayHopCount=2`/`IN_RELAY` and saved it. RelayManifest/UUID synchronization worked — peers already holding the UUID reported no missing SOSRequests.
 - *Known lint note*: `ConcurrentHashMap.newKeySet()` in `RelayManager.kt` reports `NewApi` (API 24 vs minSdk 23); builds currently skip lint.
 
+### Day 5 (complete — physically verified on three devices)
+- Created `DutyCycler.kt`: pure Kotlin duty-cycle loop (~10s ACTIVE / ~40s SLEEP per contract §6.1), decoupled from SOS state; injectable timing/delay for JVM tests.
+- Added `RelayManager.startScanWindow()`/`stopScanWindow()` (idempotent, guarded) — opening starts advertising/discovery, closing stops only advertising/discovery; connected endpoints survive.
+- Created `RelayForegroundService` (`connectedDevice` type, START_STICKY, `exported=false`, local Binder) + `RelayNotification` + `RelayDataSourceProvider` static seam.
+- 8 new `DutyCyclerTest` cases; full `:relay` suite = **64 tests PASS**. 3-device A→B→C validated under FGS + duty cycle.
+
+### Day 6 (complete — physically verified on three devices, including persistence across restart)
+- `:data` Room layer ported from C: entities, DAOs, `AppDatabase` (`sih_local.db`), `RoomConverters`, model enums; `DevicePreferences` (de-Hilted identity); `SosRequestMapper`; `RoomRelayDataSource` (implements `RelayDataSource` against Room; `saveSosMessages` uses `insertSos` IGNORE).
+- `relay`: `RelayPermissionRequirements` (version-aware permission matrix + BT/Wi-Fi enable-intent helpers); startup hardening of `RelayManager` + FGS.
+- `app`: `MainActivity` builds `AppDatabase` + `RoomRelayDataSource`, sets it on `RelayDataSourceProvider`, and "Start Relay" runs a permission preflight (runtime permission requests + Bluetooth enable prompt) before starting the service; on-screen status text added.
+- **75 JVM tests PASS** (64 relay + 11 data). Build via JBR `gradlew.bat ... -x lint -x lintDebug` → BUILD SUCCESSFUL.
+- **Physical (3 devices, Room-backed store):** A created SOS `e9407a8a-...` (`Room now holds 1 SOS UUID(s)`); B received it (`hopCount=1`, `IN_RELAY`) and forwarded via `saveSosMessages()`; B advertised it in its known-UUID manifest; C received it (`hopCount=2`, `IN_RELAY`) and forwarded via `saveSosMessages()`.
+- **Persistence-across-restart (C):** after clearing the C process and relaunching, a fresh injection logged `Room now holds 2 SOS UUID(s)` — the relayed SOS survived the restart in `sih_local.db`.
+
 ### Not yet implemented (scheduled per roadmap)
-- Foreground service + duty cycling → Day 5
-- Permission UX / "Enable Emergency Mode" flow → Day 6
 - TTL cleanup (`last_relayed_at` expiry, 48-72h) → later
 - Low-battery throttle mode → Day 10
 - Simulation/fallback demo mode → Day 12
+- Stress-test with 4-5 phones (duplicate/dropped/stuck detection) → Day 7
 
 ---
 
@@ -209,8 +224,8 @@ NOT owned by A+B:
 
 | Dependency | Direction | Status | Notes |
 |---|---|---|---|
-| `:data` implements `RelayDataSource` | `:relay` → `:data` (via interface) | Pending (Day 2+) | C must write `RoomRelayDataSource` |
-| `:app` injects `RelayDataSource` | `:app` wires both | Pending (Day 2+) | Stub injected on Day 1 |
+| `:data` implements `RelayDataSource` | `:relay` → `:data` (via interface) | **DONE (Day 6)** | `RoomRelayDataSource` implements it against Room; `SosRequestMapper` bridges relay model ↔ entity |
+| `:app` injects `RelayDataSource` | `:app` wires both | **DONE (Day 6)** | `MainActivity` builds `AppDatabase` + `RoomRelayDataSource`, sets it on `RelayDataSourceProvider` |
 | Backend `POST /api/v1/sos/batch` | Consumed by `:network` (not `:relay`) | N/A for relay | Relay does not call backend directly |
 
 ---

@@ -141,10 +141,12 @@ class RelayForegroundService : Service() {
         val action = intent?.action
         Log.i(TAG, "onStartCommand action=$action")
 
-        startForeground(
-            RelayNotification.NOTIFICATION_ID,
-            RelayNotification.build(this)
-        )
+        // Day 6 hardening: on API 34+, startForeground for the connectedDevice
+        // FGS type throws SecurityException if BLUETOOTH_CONNECT is not granted.
+        // Promote defensively so a missing permission cannot crash the service.
+        if (!promoteToForeground()) {
+            return START_NOT_STICKY
+        }
 
         when (action) {
             ACTION_STOP -> {
@@ -168,6 +170,24 @@ class RelayForegroundService : Service() {
                 return START_STICKY
             }
         }
+    }
+
+    /** Calls [startForeground], returning false (and stopping) if it throws. */
+    private fun promoteToForeground(): Boolean = try {
+        startForeground(
+            RelayNotification.NOTIFICATION_ID,
+            RelayNotification.build(this)
+        )
+        true
+    } catch (e: SecurityException) {
+        Log.e(TAG, "startForeground threw SecurityException (missing " +
+                "BLUETOOTH_CONNECT/FGS permission?). Stopping relay service.", e)
+        stopSelf()
+        false
+    } catch (e: Exception) {
+        Log.e(TAG, "startForeground failed. Stopping relay service.", e)
+        stopSelf()
+        false
     }
 
     override fun onBind(intent: Intent?): IBinder = binder

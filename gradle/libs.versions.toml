@@ -21,6 +21,18 @@ kotlinxSerialization = "1.7.1"
 # Testing
 junit = "4.13.2"
 
+# Room (persistence for :data — Component C)
+room = "2.6.1"
+
+# Moshi (Room TypeConverter JSON — Component C)
+moshi = "1.15.1"
+
+# EncryptedSharedPreferences (device identity — Component C)
+securityCrypto = "1.1.0-alpha06"
+
+# MockK (JVM unit-test mocking — Component C test style)
+mockk = "1.13.11"
+
 
 [libraries]
 # AndroidX
@@ -38,6 +50,18 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+
+# Room — persistence for :data (Component C)
+room-runtime  = { group = "androidx.room", name = "room-runtime",  version.ref = "room" }
+room-ktx      = { group = "androidx.room", name = "room-ktx",      version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# Moshi — JSON for Room TypeConverters (Component C)
+moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
+
+# EncryptedSharedPreferences — device identity (Component C)
+security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
 
 [plugins]

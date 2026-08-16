@@ -50,4 +50,7 @@ dependencies {
     implementation(project(":network"))
 
     implementation(libs.androidx.core.ktx)
+
+    // Room runtime — MainActivity builds AppDatabase and RoomRelayDataSource directly.
+    implementation(libs.room.runtime)
 }

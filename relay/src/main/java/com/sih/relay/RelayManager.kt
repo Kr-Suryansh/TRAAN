@@ -469,25 +469,65 @@ class RelayManager(
         scanningWindow = true
         Log.i(TAG, "Opening scan window. Starting Nearby Connections advertising & discovery (P2P_CLUSTER)...")
 
-        connectionsClient.startAdvertising(
-            LOCAL_ENDPOINT_NAME,
-            SERVICE_ID,
-            connectionLifecycleCallback,
-            AdvertisingOptions.Builder().setStrategy(STRATEGY).build()
-        ).addOnSuccessListener {
-            Log.i(TAG, "Advertising started successfully (serviceId=$SERVICE_ID)")
-        }.addOnFailureListener { e ->
-            Log.e(TAG, "Failed to start advertising", e)
+        // Day 6 hardening: log clearly when runtime permissions are not yet
+        // granted (the Nearby SDK throws SecurityException synchronously in that
+        // case) and catch any synchronous startup throw so the duty cycler keeps
+        // running and retries on the next window instead of crashing the service.
+        val missingPermissions = RelayPermissionRequirements.missingPermissions(context)
+        if (missingPermissions.isNotEmpty()) {
+            Log.w(TAG, "startScanWindow: missing runtime permissions that may prevent " +
+                    "advertising/discovery from starting: $missingPermissions")
         }
 
-        connectionsClient.startDiscovery(
-            SERVICE_ID,
-            endpointDiscoveryCallback,
-            DiscoveryOptions.Builder().setStrategy(STRATEGY).build()
-        ).addOnSuccessListener {
-            Log.i(TAG, "Discovery started successfully (serviceId=$SERVICE_ID)")
-        }.addOnFailureListener { e ->
-            Log.e(TAG, "Failed to start discovery", e)
+        try {
+            connectionsClient.startAdvertising(
+                LOCAL_ENDPOINT_NAME,
+                SERVICE_ID,
+                connectionLifecycleCallback,
+                AdvertisingOptions.Builder().setStrategy(STRATEGY).build()
+            ).addOnSuccessListener {
+                Log.i(TAG, "Advertising started successfully (serviceId=$SERVICE_ID)")
+            }.addOnFailureListener { e ->
+                Log.e(TAG, "Failed to start advertising", e)
+            }
+        } catch (e: SecurityException) {
+            Log.e(TAG, "startAdvertising threw SecurityException (Bluetooth/Wi-Fi permission not " +
+                    "granted?). Scan window aborted; duty cycle will retry on the next window.", e)
+            scanningWindow = false
+            return
+        } catch (e: Exception) {
+            Log.e(TAG, "startAdvertising failed to start", e)
+            scanningWindow = false
+            return
+        }
+
+        try {
+            connectionsClient.startDiscovery(
+                SERVICE_ID,
+                endpointDiscoveryCallback,
+                DiscoveryOptions.Builder().setStrategy(STRATEGY).build()
+            ).addOnSuccessListener {
+                Log.i(TAG, "Discovery started successfully (serviceId=$SERVICE_ID)")
+            }.addOnFailureListener { e ->
+                Log.e(TAG, "Failed to start discovery", e)
+            }
+        } catch (e: SecurityException) {
+            Log.e(TAG, "startDiscovery threw SecurityException (Bluetooth/Wi-Fi permission not " +
+                    "granted?). Stopping advertising to avoid a half-open scan window.", e)
+            try {
+                connectionsClient.stopAdvertising()
+            } catch (ignore: Exception) {
+                // best-effort cleanup only
+            }
+            scanningWindow = false
+        } catch (e: Exception) {
+            Log.e(TAG, "startDiscovery failed to start", e)
+            try {
+                connectionsClient.stopAdvertising()
+            } catch (ignore: Exception) {
+                // best-effort cleanup only
+            }
+            scanningWindow = false
         }
     }
 
