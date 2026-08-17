@@ -8,19 +8,22 @@ import logging
 import json
 import os
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from sqlalchemy.orm import Session
+
 from app.models.schemas import Resource, ResourceCategory, ResourceStatus, Location
+from app.db.database import init_db, SessionLocal
+from app.db.models import ResourceModel
 
 # Set up simple logging for the script
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 # Sample Data sourced from a typical District Disaster Management Plan (e.g. Dehradun/Uttarkashi)
-# Mixed with estimates where gaps exist.
 DEMO_DISTRICT = "Dehradun"
 
 def load_json_dataset() -> List[Dict[str, Any]]:
-    # Load from the new structured dataset
+    # Load from the structured dataset
     current_dir = os.path.dirname(os.path.abspath(__file__))
     json_path = os.path.join(current_dir, "data.json")
     with open(json_path, "r", encoding="utf-8") as f:
@@ -58,37 +61,39 @@ def validate_resource_data(data: Dict[str, Any]):
     if not loc.get("district"):
         raise ValueError("District is required")
         
-    # Enum rules validation is handled implicitly by Pydantic when instantiating Resource,
-    # but we can explicitly check here if we want to be overly cautious.
     if data["category"] not in ["medical", "rescue", "shelter", "transport", "communication"]:
         raise ValueError(f"Invalid category: {data['category']}")
     if data["status"] not in ["available", "partially_deployed", "deployed", "maintenance"]:
         raise ValueError(f"Invalid status: {data['status']}")
 
-def seed_database():
+def seed_database(db: Optional[Session] = None) -> List[Resource]:
     """
-    In a real implementation, this would use an SQLAlchemy Session 
-    to insert records into the PostgreSQL database.
-    Since we are currently building independent modules with Pydantic stubs, 
-    we will generate the mock objects and simulate insertion.
+    Uses SQLAlchemy Session to upsert records into the PostgreSQL/SQLite Resource table.
+    Can be run standalone or passed an existing session.
     """
-    logger.info(f"Starting seed process for mock IDRN registry (District: {DEMO_DISTRICT})...")
+    logger.info(f"Starting database seed process for mock IDRN registry (District: {DEMO_DISTRICT})...")
     
-    raw_data = load_json_dataset()
-    seeded_resources: List[Resource] = []
+    # Ensure database schema is initialized
+    init_db()
     
-    for item in raw_data:
-        try:
+    close_db_on_exit = False
+    if db is None:
+        db = SessionLocal()
+        close_db_on_exit = True
+
+    try:
+        raw_data = load_json_dataset()
+        seeded_resources: List[Resource] = []
+        
+        for item in raw_data:
             validate_resource_data(item)
             
-            # Extract canonical resource fields and parse into Pydantic model
             loc = Location(
                 lat=item["location"]["lat"],
                 lng=item["location"]["lng"],
                 district=item["location"]["district"]
             )
             
-            # Convert string to enum values via Pydantic instantiation
             resource = Resource(
                 resource_id=item["resource_id"],
                 category=ResourceCategory(item["category"]),
@@ -101,18 +106,41 @@ def seed_database():
                 contact=item["contact"],
                 last_updated_at=datetime.fromisoformat(item["last_updated_at"].replace("Z", "+00:00"))
             )
+
+            # Idempotent upsert into database table
+            existing_model = db.query(ResourceModel).filter(ResourceModel.resource_id == resource.resource_id).first()
+            if existing_model:
+                existing_model.category = resource.category.value
+                existing_model.sub_type = resource.sub_type
+                existing_model.custodian_agency = resource.custodian_agency
+                existing_model.quantity_total = resource.quantity_total
+                existing_model.quantity_available = resource.quantity_available
+                existing_model.status = resource.status.value
+                existing_model.lat = resource.location.lat
+                existing_model.lng = resource.location.lng
+                existing_model.district = resource.location.district
+                existing_model.contact = resource.contact
+                existing_model.last_updated_at = resource.last_updated_at
+            else:
+                db.add(ResourceModel.from_pydantic(resource))
+                
             seeded_resources.append(resource)
             
-            # Log provenance separately without altering canonical schema
             provenance = item.get("provenance", {})
-            logger.info(f"Inserted: {resource.quantity_total}x {resource.sub_type} (Agency: {resource.custodian_agency}) [Source: {provenance.get('source_type', 'Unknown')}]")
+            logger.info(f"Persisted to DB: {resource.quantity_total}x {resource.sub_type} (Agency: {resource.custodian_agency}) [Source: {provenance.get('source_type', 'Unknown')}]")
         
-        except Exception as e:
-            logger.error(f"Failed to seed record {item.get('resource_id', 'Unknown')}: {e}")
-            raise
-        
-    logger.info(f"Successfully seeded {len(seeded_resources)} resource categories into the database.")
-    return seeded_resources
+        db.commit()
+        logger.info(f"Successfully seeded {len(seeded_resources)} resource records into database table.")
+        return seeded_resources
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to seed resource dataset: {e}")
+        raise
+    finally:
+        if close_db_on_exit:
+            db.close()
 
 if __name__ == "__main__":
     seed_database()
+

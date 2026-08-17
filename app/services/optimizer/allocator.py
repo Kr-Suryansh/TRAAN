@@ -1,19 +1,20 @@
 import logging
 import math
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from ortools.sat.python import cp_model
-from app.models.schemas import Incident, Resource, SeverityEnum, RecommendedResource
+from app.models.schemas import Incident, Resource, SeverityEnum, ResourceStatus, RecommendedResource
 
 logger = logging.getLogger(__name__)
 
-def get_severity_weight(severity: SeverityEnum) -> int:
+
+def get_severity_weight(severity: Optional[SeverityEnum]) -> int:
     weights = {
         SeverityEnum.critical: 1000,
         SeverityEnum.high: 500,
         SeverityEnum.medium: 100,
         SeverityEnum.low: 10
     }
-    return weights.get(severity, 10)
+    return weights.get(severity, 10) if severity else 10
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
@@ -34,6 +35,9 @@ def estimate_demand(incident: Incident) -> Dict[str, int]:
     """
     Heuristic to estimate how many resources of each category an incident needs.
     Based on severity and estimated people affected.
+    
+    Note: These demand formulas (e.g. shelter = ceil(people / 20), transport = ceil(people / 10)) 
+    are project heuristics used for demo optimization and are not official IDRN/NDMA allocation rules.
     """
     demand = {
         "medical": 0,
@@ -69,12 +73,46 @@ def optimize_allocations(incidents: List[Incident], resources: List[Resource], c
     Uses Google OR-Tools CP-SAT solver to recommend resource allocations.
     Prioritizes critical incidents.
     Never recommends more of a resource than `quantity_available`.
-    Considers geographic distance.
+    Considers geographic distance and user-provided optimization constraints.
+    Eligible resource statuses: `available` and `partially_deployed` (with positive quantity_available).
     """
     try:
         active_incidents = [i for i in incidents if i.status not in ["resolved"]]
-        available_resources = [r for r in resources if r.quantity_available > 0 and r.status == 'available']
         
+        # Eligible resource status: available or partially_deployed with quantity_available > 0
+        eligible_statuses = {ResourceStatus.available, ResourceStatus.partially_deployed, "available", "partially_deployed"}
+        available_resources = [
+            r for r in resources 
+            if r.quantity_available > 0 and (
+                r.status in eligible_statuses or 
+                (hasattr(r.status, 'value') and r.status.value in ["available", "partially_deployed"])
+            )
+        ]
+
+        # Parse and validate constraints dictionary
+        constraints = constraints or {}
+        max_dist = constraints.get("maximum_distance")
+        req_cats = constraints.get("required_resource_categories")
+        excl_ids = set(constraints.get("excluded_resource_ids") or [])
+        max_alloc = constraints.get("maximum_allocation")
+
+        # Warn on unsupported keys
+        supported_keys = {"maximum_distance", "required_resource_categories", "excluded_resource_ids", "maximum_allocation"}
+        unsupported = set(constraints.keys()) - supported_keys
+        if unsupported:
+            logger.warning(f"Optimization received unsupported constraint keys: {unsupported}. They will be ignored.")
+
+        # Apply constraint filters on resources
+        if excl_ids:
+            available_resources = [r for r in available_resources if r.resource_id not in excl_ids]
+            
+        if req_cats:
+            req_cat_strs = {c.value if hasattr(c, 'value') else str(c) for c in req_cats}
+            available_resources = [
+                r for r in available_resources 
+                if (r.category.value if hasattr(r.category, 'value') else str(r.category)) in req_cat_strs
+            ]
+
         if not active_incidents or not available_resources:
             return []
 
@@ -85,18 +123,37 @@ def optimize_allocations(incidents: List[Incident], resources: List[Resource], c
         
         for i_idx, incident in enumerate(active_incidents):
             for r_idx, resource in enumerate(available_resources):
-                max_qty = resource.quantity_available
-                x[(i_idx, r_idx)] = model.NewIntVar(0, max_qty, f"assign_i{i_idx}_r{r_idx}")
+                # Calculate distance
+                dist_km = haversine_distance(
+                    incident.location.lat, incident.location.lng,
+                    resource.location.lat, resource.location.lng
+                )
+                
+                # Check maximum distance constraint
+                if max_dist is not None and dist_km > max_dist:
+                    upper_bound = 0
+                else:
+                    upper_bound = resource.quantity_available
+                    if max_alloc is not None:
+                        upper_bound = min(upper_bound, max_alloc)
+
+                x[(i_idx, r_idx)] = model.NewIntVar(0, upper_bound, f"assign_i{i_idx}_r{r_idx}")
 
         # Constraint 1: Do not exceed available resource quantity globally
         for r_idx, resource in enumerate(available_resources):
-            model.Add(sum(x[(i_idx, r_idx)] for i_idx in range(len(active_incidents))) <= resource.quantity_available)
+            cap = resource.quantity_available
+            if max_alloc is not None:
+                cap = min(cap, max_alloc)
+            model.Add(sum(x[(i_idx, r_idx)] for i_idx in range(len(active_incidents))) <= cap)
 
         # Constraint 2: Do not exceed estimated demand per incident
         for i_idx, incident in enumerate(active_incidents):
             demand = estimate_demand(incident)
             for cat, qty in demand.items():
-                matching_r_indices = [r_idx for r_idx, r in enumerate(available_resources) if r.category.value == cat]
+                matching_r_indices = [
+                    r_idx for r_idx, r in enumerate(available_resources) 
+                    if (r.category.value if hasattr(r.category, 'value') else str(r.category)) == cat
+                ]
                 if matching_r_indices:
                     model.Add(sum(x[(i_idx, r_idx)] for r_idx in matching_r_indices) <= qty)
 
@@ -106,19 +163,13 @@ def optimize_allocations(incidents: List[Incident], resources: List[Resource], c
             weight = get_severity_weight(incident.severity)
             
             for r_idx, resource in enumerate(available_resources):
-                # Calculate distance penalty
                 dist_km = haversine_distance(
                     incident.location.lat, incident.location.lng,
                     resource.location.lat, resource.location.lng
                 )
                 
-                # Penalty scales with distance. weight is generally 10-1000.
-                # A distance of 10km could subtract ~10 points from the weight.
-                # Integer arithmetic needed for OR-Tools objective terms, so we round it.
-                penalty = int(min(dist_km, weight - 1)) # Ensure penalty doesn't outweigh priority entirely unless very far
-                
+                penalty = int(min(dist_km, weight - 1))
                 effective_weight = weight - penalty
-                
                 objective_terms.append(effective_weight * x[(i_idx, r_idx)])
                 
         model.Maximize(sum(objective_terms))
@@ -138,11 +189,12 @@ def optimize_allocations(incidents: List[Incident], resources: List[Resource], c
                             incident.location.lat, incident.location.lng,
                             resource.location.lat, resource.location.lng
                         )
+                        sev_str = incident.severity.value if incident.severity and hasattr(incident.severity, 'value') else (str(incident.severity) if incident.severity else 'unspecified')
                         assignments.append({
                             "incident_id": incident.incident_id,
                             "resource_id": resource.resource_id,
                             "quantity": assigned_qty,
-                            "reasoning": f"Prioritized for the {incident.severity.value} severity incident due to {resource.category.value} suitability and location (~{dist_km:.1f}km away)."
+                            "reasoning": f"Prioritized for the {sev_str} severity incident due to {resource.category.value if hasattr(resource.category, 'value') else resource.category} suitability and location (~{dist_km:.1f}km away)."
                         })
         else:
             logger.warning("OR-Tools solver could not find a feasible solution.")
@@ -151,3 +203,4 @@ def optimize_allocations(incidents: List[Incident], resources: List[Resource], c
     except Exception as e:
         logger.error(f"Optimization failed: {str(e)}")
         return []
+

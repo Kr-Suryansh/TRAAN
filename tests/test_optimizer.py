@@ -292,3 +292,95 @@ def test_no_resources(base_location, now):
     ]
     assignments = optimize_allocations(incidents, [])
     assert assignments == []
+
+# --- Test 9: Partially deployed resources are eligible ---
+def test_partially_deployed_resources_eligible(base_location, now):
+    incidents = [
+        Incident(
+            cluster_id="c_partial",
+            location=base_location,
+            severity=SeverityEnum.critical,
+            flags=Flags(medical_emergency=True),
+            first_reported_at=now,
+            last_updated_at=now
+        )
+    ]
+    resources = [
+        Resource(
+            resource_id="r_partially_deployed",
+            category=ResourceCategory.medical,
+            sub_type="ambulance",
+            custodian_agency="H1",
+            quantity_total=10,
+            quantity_available=3,
+            status=ResourceStatus.partially_deployed, # Partially deployed!
+            location=base_location,
+            contact="108",
+            last_updated_at=now
+        )
+    ]
+    assignments = optimize_allocations(incidents, resources)
+    assert len(assignments) > 0
+    assert assignments[0]["resource_id"] == "r_partially_deployed"
+
+# --- Test 10: Optimizer constraints behavior ---
+def test_optimizer_constraints(now):
+    inc_loc = Location(lat=30.0, lng=78.0)
+    incidents = [
+        Incident(
+            incident_id="inc_constraint_1",
+            cluster_id="c1",
+            location=inc_loc,
+            severity=SeverityEnum.critical,
+            flags=Flags(medical_emergency=True, trapped=True),
+            first_reported_at=now,
+            last_updated_at=now
+        )
+    ]
+    res_near = Resource(
+        resource_id="r_near_amb",
+        category=ResourceCategory.medical,
+        sub_type="ambulance",
+        custodian_agency="H1",
+        quantity_total=5,
+        quantity_available=5,
+        status=ResourceStatus.available,
+        location=Location(lat=30.01, lng=78.01), # ~1.5km
+        contact="108",
+        last_updated_at=now
+    )
+    res_far = Resource(
+        resource_id="r_far_boat",
+        category=ResourceCategory.rescue,
+        sub_type="boat",
+        custodian_agency="SDRF",
+        quantity_total=5,
+        quantity_available=5,
+        status=ResourceStatus.available,
+        location=Location(lat=31.0, lng=78.0), # ~111km
+        contact="112",
+        last_updated_at=now
+    )
+    all_resources = [res_near, res_far]
+
+    # Subtest A: Excluded resource IDs
+    assign_excl = optimize_allocations(incidents, all_resources, constraints={"excluded_resource_ids": ["r_near_amb"]})
+    assigned_ids = [a["resource_id"] for a in assign_excl]
+    assert "r_near_amb" not in assigned_ids
+
+    # Subtest B: Maximum distance constraint (5km)
+    assign_dist = optimize_allocations(incidents, all_resources, constraints={"maximum_distance": 5.0})
+    assigned_ids_dist = [a["resource_id"] for a in assign_dist]
+    assert "r_near_amb" in assigned_ids_dist
+    assert "r_far_boat" not in assigned_ids_dist
+
+    # Subtest C: Required categories constraint
+    assign_cat = optimize_allocations(incidents, all_resources, constraints={"required_resource_categories": ["rescue"]})
+    assigned_cats = [a["resource_id"] for a in assign_cat]
+    assert "r_near_amb" not in assigned_cats
+
+    # Subtest D: Maximum allocation cap
+    assign_cap = optimize_allocations(incidents, all_resources, constraints={"maximum_allocation": 1})
+    for a in assign_cap:
+        assert a["quantity"] <= 1
+

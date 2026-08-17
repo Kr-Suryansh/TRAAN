@@ -86,7 +86,7 @@ class Incident(BaseModel):
     location: Location
     area_name: str = ""
     emergency_types: List[str] = []
-    severity: SeverityEnum = SeverityEnum.medium
+    severity: Optional[SeverityEnum] = None
     ai_summary: str = ""
     report_count: int = 0
     estimated_people_affected: int = 0

@@ -10,11 +10,27 @@ from app.services.optimizer.incident_service import (
     INCIDENT_STORE
 )
 
+from app.db.database import SessionLocal, init_db
+from app.db.models import IncidentModel
+
 @pytest.fixture(autouse=True)
 def reset_store():
     clear_incident_store()
+    init_db()
+    db = SessionLocal()
+    try:
+        db.query(IncidentModel).delete()
+        db.commit()
+    finally:
+        db.close()
     yield
     clear_incident_store()
+    db = SessionLocal()
+    try:
+        db.query(IncidentModel).delete()
+        db.commit()
+    finally:
+        db.close()
 
 @pytest.fixture
 def base_location():

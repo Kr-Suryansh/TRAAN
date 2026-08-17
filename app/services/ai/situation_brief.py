@@ -13,7 +13,8 @@ from pydantic import BaseModel
 from app.models.schemas import Incident, Resource, SeverityEnum
 from app.services.ai.client import get_client
 from app.services.optimizer.resource_registry import get_all_resources
-from app.services.optimizer.incident_service import INCIDENT_STORE
+from app.services.optimizer.incident_service import get_active_incidents
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ def clear_situation_brief_cache():
     with _CACHE_LOCK:
         _SITUATION_BRIEF_CACHE = None
 
-def get_cached_situation_brief() -> SituationBriefCache:
+def get_cached_situation_brief(db: Optional[Session] = None) -> SituationBriefCache:
     """
     Returns the latest valid cached situation brief.
     If no cache exists yet, triggers a refresh.
@@ -47,22 +48,27 @@ def get_cached_situation_brief() -> SituationBriefCache:
             return _SITUATION_BRIEF_CACHE
 
     # If no cache exists, generate initial brief
-    return refresh_situation_brief()
+    return refresh_situation_brief(db=db)
 
 def refresh_situation_brief(
     incidents: Optional[List[Incident]] = None,
-    resources: Optional[List[Resource]] = None
+    resources: Optional[List[Resource]] = None,
+    db: Optional[Session] = None
 ) -> SituationBriefCache:
     """
-    Collects current active operational state, invokes Gemini to generate an 
+    Collects current active operational state from DB, invokes Gemini to generate an 
     overall situation brief, validates the result, and updates the cache.
     Matches POST /api/v1/situation-brief/refresh contract behavior.
     """
     global _SITUATION_BRIEF_CACHE
 
-    # Fetch active incidents from store if not provided
+    # Fetch active incidents from database if not provided
     if incidents is None:
-        incidents = list(INCIDENT_STORE.values())
+        try:
+            incidents = get_active_incidents(db=db)
+        except Exception as e:
+            logger.warning(f"Could not fetch active incidents from DB for situation brief: {e}")
+            incidents = []
 
     active_incidents = [i for i in incidents if i.status not in ["resolved"]]
 
@@ -142,6 +148,7 @@ def _build_situation_prompt(active_incidents: List[Incident], resources: List[Re
         "high": sum(1 for i in active_incidents if i.severity == SeverityEnum.high),
         "medium": sum(1 for i in active_incidents if i.severity == SeverityEnum.medium),
         "low": sum(1 for i in active_incidents if i.severity == SeverityEnum.low),
+        "unspecified": sum(1 for i in active_incidents if i.severity is None),
     }
 
     total_affected = sum(i.estimated_people_affected for i in active_incidents)
@@ -153,7 +160,7 @@ def _build_situation_prompt(active_incidents: List[Incident], resources: List[Re
         "structural_damage": sum(1 for i in active_incidents if i.flags.structural_damage),
     }
 
-    # Resource availability summary
+    # Resource availability summary (including available and partially_deployed resources)
     resource_avail: Dict[str, Dict[str, int]] = {}
     for r in resources:
         cat = r.category.value if hasattr(r.category, 'value') else str(r.category)
@@ -161,21 +168,23 @@ def _build_situation_prompt(active_incidents: List[Incident], resources: List[Re
             resource_avail[cat] = {"total": 0, "available": 0}
         resource_avail[cat]["total"] += r.quantity_total
         r_status = r.status.value if hasattr(r.status, 'value') else str(r.status)
-        if r_status == "available":
+        if r_status in ["available", "partially_deployed"] and r.quantity_available > 0:
             resource_avail[cat]["available"] += r.quantity_available
 
     # Recommendations summary
     recommendations_list = []
     for inc in active_incidents:
+        sev_str = inc.severity.value if inc.severity and hasattr(inc.severity, 'value') else (str(inc.severity) if inc.severity else 'unspecified')
         for rec in inc.recommended_resources:
-            recommendations_list.append(f"- Incident {inc.incident_id[:8]} ({inc.severity.value}): Recommend {rec.quantity}x {rec.resource_type} ({rec.reasoning})")
+            recommendations_list.append(f"- Incident {inc.incident_id[:8]} ({sev_str}): Recommend {rec.quantity}x {rec.resource_type} ({rec.reasoning})")
 
     recs_text = "\n".join(recommendations_list) if recommendations_list else "None generated yet."
 
     # Incident summaries
     inc_summaries = []
     for idx, inc in enumerate(active_incidents, 1):
-        summary_line = f"Incident {idx}: Severity={inc.severity.value}, Affected={inc.estimated_people_affected}, Area='{inc.area_name or 'Unknown'}', Summary='{inc.ai_summary or 'No AI summary'}'"
+        sev_val = inc.severity.value if inc.severity and hasattr(inc.severity, 'value') else (str(inc.severity) if inc.severity else 'unspecified')
+        summary_line = f"Incident {idx}: Severity={sev_val}, Affected={inc.estimated_people_affected}, Area='{inc.area_name or 'Unknown'}', Summary='{inc.ai_summary or 'No AI summary'}'"
         inc_summaries.append(summary_line)
 
     incidents_text = "\n".join(inc_summaries)
@@ -207,14 +216,19 @@ def _validate_brief_text(text: str) -> str:
     """
     Validates Gemini output. Raises ValueError if brief text is invalid or malformed.
     """
-    if not text:
+    if not text or not text.strip():
         raise ValueError("Brief text is empty")
+
+    text = text.strip()
 
     if len(text) > 2000:
         raise ValueError("Brief text exceeds maximum length limit")
 
+    if "\n\n" in text:
+        raise ValueError("Brief text must be a single paragraph, but contains multiple paragraph breaks")
+
     # Reject if it looks like raw JSON or raw prompt leak
-    if text.strip().startswith("{") and text.strip().endswith("}"):
+    if text.startswith("{") and text.endswith("}"):
         raise ValueError("Brief text appears to be raw JSON instead of plain text paragraph")
 
     forbidden_phrases = ["ignore previous instructions", "system instructions", "you are an ai"]
@@ -268,7 +282,7 @@ def _get_fallback_brief_text(active_incidents: List[Incident], resources: List[R
 
     avail_res_count = sum(
         r.quantity_available for r in resources 
-        if (r.status.value if hasattr(r.status, 'value') else str(r.status)) == "available"
+        if (r.status.value if hasattr(r.status, 'value') else str(r.status)) in ["available", "partially_deployed"] and r.quantity_available > 0
     )
 
     return (
@@ -277,6 +291,7 @@ def _get_fallback_brief_text(active_incidents: List[Incident], resources: List[R
         f"An estimated {total_affected} total people are affected. "
         f"{avail_res_count} total resource units are available across registered agencies."
     )
+
 
 def start_periodic_refresh(interval_seconds: int = 300):
     """

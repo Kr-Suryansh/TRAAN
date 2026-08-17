@@ -56,3 +56,34 @@
 - **Testing**: Added 12 comprehensive unit and integration tests in `tests/test_situation_brief.py` covering aggregation, prompt contents, empty states, Gemini failure with/without cache, invalid output rejection, untrusted input protection, background refresh thread, zero side-effects on resource states, and real Gemini API execution.
 - **Full Test Suite Verification**: All 37 tests across the entire test suite pass cleanly (8 Day 4 optimizer, 8 Day 5 Gemini AI, 9 Day 6 incident integration, 12 Day 7 situation brief).
 - **Deviations from initial plan**: None.
+
+## 2026-08-17 (Day 8 — Component E Post-Audit P0 Remediation & Test Hardening)
+
+### P0 Remediation Overview
+Following an independent red-team audit, two P0 blockers were identified and remediated:
+
+1. **P0-1 Gemini Failure Safety (Null Severity Handling)**
+   - **Problem**: When Gemini failed, `_get_fallback_summary` correctly returned `severity = None`. However, the Pydantic schema typed `severity` as non-nullable `SeverityEnum` defaulting to `medium`, and `IncidentModel.to_pydantic()` previously coerced DB `NULL` values to `SeverityEnum.medium`, silently fabricating a medium severity.
+   - **Fix**: Updated `Incident.severity` in `app/models/schemas.py` to `Optional[SeverityEnum] = None`. Updated `IncidentModel.to_pydantic()` in `app/db/models.py` to preserve `NULL` as `None` (`sev = SeverityEnum(self.severity) if self.severity else None`).
+   - **CASE B Preservation Rule**: Updated `update_incident()` in `app/services/optimizer/incident_service.py` to preserve an existing valid severity (e.g. `SeverityEnum.high`) if a subsequent update returns `severity=None` due to a Gemini failure.
+
+2. **P0-4 Incident Database Integration (Single Source of Truth)**
+   - **Problem**: Production incident reads previously loaded from an in-memory `INCIDENT_STORE` dictionary instead of PostgreSQL/SQLite. Upon application restart, `INCIDENT_STORE` was empty, causing the optimizer and situation brief to see zero active incidents despite DB records existing.
+   - **Fix**: Refactored `get_active_incidents()`, `get_incident_by_id()`, `create_incident()`, `update_incident()`, `run_automatic_optimization_for_store()`, and `run_on_demand_optimization()` in `app/services/optimizer/incident_service.py` to query and persist active incidents directly using database sessions (`IncidentModel` table).
+   - **Situation Brief Integration**: Refactored `refresh_situation_brief()` in `app/services/ai/situation_brief.py` to fetch active incidents directly from the database using `get_active_incidents(db=db)`.
+   - **INCIDENT_STORE Audit**: Removed `INCIDENT_STORE` from production runtime execution paths. `INCIDENT_STORE` is retained only as a secondary sync object for legacy unit-test compatibility.
+
+### Optimizer Constraints & Resource Eligibility (P1 Features Verified)
+- All four solver constraints (`excluded_resource_ids`, `required_resource_categories`, `maximum_distance`, `maximum_allocation`) are enforced in `allocator.py`.
+- Resource eligibility includes `status in {available, partially_deployed}` with `quantity_available > 0`. `deployed` and `maintenance` remain excluded.
+- Zero automatic dispatch: recommendations attach to `Incident.recommended_resources` without mutating `quantity_available` or creating dispatch records.
+
+### Test Suite Results
+- **48 Passed, 1 Skipped, 0 Failed** (`pytest -v`, Python 3.11.9).
+- Added 6 targeted P0 remediation tests in `tests/test_p0_remediation.py` verifying DB NULL severity round-trip, Gemini failure persistence, CASE B severity preservation, and process restart recovery for DB persistence, optimizer, and situation brief.
+- Skipped test: `test_real_gemini_situation_brief_api` skipped due to external Gemini API returning HTTP 503 UNAVAILABLE (`This model is currently experiencing high demand`). Production fallback behavior (`is_fallback=True`, valid deterministic fallback text) was verified independently.
+
+### Remaining Issue (P3)
+- **Demand Estimation Formulas**: Resource demand formulas in `allocator.py` (e.g. `shelter = ceil(people / 20)`) are project/demo heuristics used for optimization demonstration, not official NDMA/IDRN allocation rules.
+
+### Final Status: ✅ READY FOR INTEGRATION

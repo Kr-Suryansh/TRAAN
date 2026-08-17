@@ -1,27 +1,51 @@
 """
 resource_registry.py
-Helper module for fetching and filtering available resources from the resource store.
+Helper module for fetching and filtering database-backed resources from the resource table.
 """
-from typing import List
+from typing import List, Optional
+from sqlalchemy.orm import Session
 from app.models.schemas import Resource, ResourceStatus
+from app.db.database import SessionLocal, init_db
+from app.db.models import ResourceModel
 from app.services.mock_idrn.seed import seed_database
 
-def get_all_resources() -> List[Resource]:
+def get_all_resources(db: Optional[Session] = None) -> List[Resource]:
     """
-    Fetch all resources from the mock IDRN registry.
+    Fetch all resources from the PostgreSQL/SQLite Resource database table.
+    Seeds the database if empty.
     """
-    return seed_database()
+    init_db()
+    close_db_on_exit = False
+    if db is None:
+        db = SessionLocal()
+        close_db_on_exit = True
 
-def get_available_resources(resources: List[Resource] = None) -> List[Resource]:
+    try:
+        models = db.query(ResourceModel).all()
+        if not models:
+            # Seed database if empty
+            return seed_database(db=db)
+        return [m.to_pydantic() for m in models]
+    finally:
+        if close_db_on_exit:
+            db.close()
+
+def get_available_resources(resources: List[Resource] = None, db: Optional[Session] = None) -> List[Resource]:
     """
     Filters resources to return only those eligible for optimization:
-    - status == ResourceStatus.available
+    - status in [available, partially_deployed] (excludes deployed, maintenance)
     - quantity_available > 0
     """
     if resources is None:
-        resources = get_all_resources()
+        resources = get_all_resources(db=db)
         
+    eligible_statuses = {ResourceStatus.available, ResourceStatus.partially_deployed, "available", "partially_deployed"}
+    
     return [
         r for r in resources
-        if r.status == ResourceStatus.available and r.quantity_available > 0
+        if r.quantity_available > 0 and (
+            r.status in eligible_statuses or 
+            (hasattr(r.status, "value") and r.status.value in ["available", "partially_deployed"])
+        )
     ]
+
