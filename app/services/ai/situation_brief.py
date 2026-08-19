@@ -296,22 +296,28 @@ def _get_fallback_brief_text(active_incidents: List[Incident], resources: List[R
 def start_periodic_refresh(interval_seconds: int = 300):
     """
     Starts a background thread that periodically regenerates the situation brief every interval_seconds.
+    Idempotent: If a background refresh worker is already active, returns without creating duplicate threads.
     Catches all exceptions so thread never crashes application startup.
     """
     global _BACKGROUND_THREAD, _STOP_BACKGROUND_EVENT
-    _STOP_BACKGROUND_EVENT.clear()
+    with _CACHE_LOCK:
+        if _BACKGROUND_THREAD is not None and _BACKGROUND_THREAD.is_alive():
+            logger.info("Situation brief periodic refresh worker is already running. Skipping duplicate thread creation.")
+            return
 
-    def _worker():
-        logger.info(f"Started situation brief periodic refresh worker (interval: {interval_seconds}s).")
-        while not _STOP_BACKGROUND_EVENT.is_set():
-            try:
-                refresh_situation_brief()
-            except Exception as e:
-                logger.error(f"Background refresh of situation brief encountered error: {e}")
-            _STOP_BACKGROUND_EVENT.wait(timeout=interval_seconds)
+        _STOP_BACKGROUND_EVENT.clear()
 
-    _BACKGROUND_THREAD = threading.Thread(target=_worker, daemon=True)
-    _BACKGROUND_THREAD.start()
+        def _worker():
+            logger.info(f"Started situation brief periodic refresh worker (interval: {interval_seconds}s).")
+            while not _STOP_BACKGROUND_EVENT.is_set():
+                try:
+                    refresh_situation_brief()
+                except Exception as e:
+                    logger.error(f"Background refresh of situation brief encountered error: {e}")
+                _STOP_BACKGROUND_EVENT.wait(timeout=interval_seconds)
+
+        _BACKGROUND_THREAD = threading.Thread(target=_worker, daemon=True)
+        _BACKGROUND_THREAD.start()
 
 def stop_periodic_refresh():
     """Stops the background refresh worker thread."""

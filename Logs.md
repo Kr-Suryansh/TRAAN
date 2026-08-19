@@ -87,3 +87,20 @@ Following an independent red-team audit, two P0 blockers were identified and rem
 - **Demand Estimation Formulas**: Resource demand formulas in `allocator.py` (e.g. `shelter = ceil(people / 20)`) are project/demo heuristics used for optimization demonstration, not official NDMA/IDRN allocation rules.
 
 ### Final Status: ✅ READY FOR INTEGRATION
+
+## 2026-08-18 (Day 8 — Component E Post-Commit Audit Fixes & Integration Remediation)
+
+- **Gemini SDK Version Upgrade**: Upgraded `google-genai` from `0.3.0` to pinned `1.5.0` in `requirements.txt` (and pinned `ortools==9.10.4067`). Verified modern Pydantic structured output (`GenerateContentConfig(response_schema=...)`) with real Gemini API integration tests (`test_real_gemini_api` and `test_real_gemini_situation_brief_api`).
+- **Database Architecture Ownership Alignment**: Refactored Component E as a pure consumer of Component D's canonical database session and models (`app/db/database.py`, `app/db/models.py`), eliminating duplicate/competing database layers.
+- **Contract Drift Resolution**:
+  - `SOSRequest.status`: Updated to strict canonical enum `SOSStatus` (`pending_local`, `in_relay`, `uploaded`).
+  - `Incident.status`: Updated to strict canonical enum `IncidentStatus` (`new`, `acknowledged`, `dispatched`, `resolved`).
+  - `RecommendedResource`: Formalized `resource_id: Optional[str] = None` as an approved contract extension for mapping concrete resource dispatches.
+  - `DispatchRecord`: Added model with `DispatchStatus` enum (`dispatched`, `en_route`, `arrived`, `completed`).
+- **No Automatic Seeding on Read**: Removed automatic DB seeding from `get_all_resources()` in `app/services/optimizer/resource_registry.py`. Database reads strictly query the database and return `[]` if empty. Database seeding remains explicit via `python -m app.services.mock_idrn.seed`.
+- **Worker Idempotency**: Made `start_periodic_refresh()` in `app/services/ai/situation_brief.py` idempotent to prevent duplicate background worker thread creation on repeated calls.
+- **Medical Flag Fallback Fix**: Updated fallback logic in `summarizer.py` so a background `medical_snapshot` profile attachment alone does not trigger `medical_emergency = True` without explicit medical emergency evidence.
+- **Optimizer Constraint Validation**: Added input validation for `maximum_distance` and `maximum_allocation` before CP-SAT solver execution in `allocator.py`.
+- **Test Suite Execution**: All 52 tests passed (`52 passed in 41.67s`, Python 3.11.9).
+- **Final Status**: ✅ SERVICE LAYER READY FOR BACKEND INTEGRATION
+

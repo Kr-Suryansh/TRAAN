@@ -22,9 +22,6 @@ def get_all_resources(db: Optional[Session] = None) -> List[Resource]:
 
     try:
         models = db.query(ResourceModel).all()
-        if not models:
-            # Seed database if empty
-            return seed_database(db=db)
         return [m.to_pydantic() for m in models]
     finally:
         if close_db_on_exit:

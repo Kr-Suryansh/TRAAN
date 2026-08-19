@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, Float, DateTime, JSON, Text
 from app.db.database import Base
-from app.models.schemas import Resource, Incident, Location, ResourceCategory, ResourceStatus, SeverityEnum, Flags, RecommendedResource
+from app.models.schemas import Resource, Incident, Location, ResourceCategory, ResourceStatus, SeverityEnum, IncidentStatus, Flags, RecommendedResource
 
 class ResourceModel(Base):
     __tablename__ = "resources"
@@ -98,7 +98,7 @@ class IncidentModel(Base):
             flags=flags_obj,
             first_reported_at=self.first_reported_at or datetime.utcnow(),
             last_updated_at=self.last_updated_at or datetime.utcnow(),
-            status=self.status or "new",
+            status=IncidentStatus(self.status) if self.status and self.status in [e.value for e in IncidentStatus] else IncidentStatus.new,
             recommended_resources=recs,
             assigned_resources=self.assigned_resources or []
         )
@@ -121,7 +121,7 @@ class IncidentModel(Base):
             flags=inc.flags.model_dump() if inc.flags else {},
             first_reported_at=inc.first_reported_at or datetime.utcnow(),
             last_updated_at=inc.last_updated_at or datetime.utcnow(),
-            status=inc.status,
+            status=inc.status.value if hasattr(inc.status, "value") else str(inc.status),
             recommended_resources=recs_data,
             assigned_resources=inc.assigned_resources or []
         )

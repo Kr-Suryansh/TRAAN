@@ -68,14 +68,31 @@ def estimate_demand(incident: Incident) -> Dict[str, int]:
         
     return demand
 
-def optimize_allocations(incidents: List[Incident], resources: List[Resource], constraints: dict = None) -> List[Dict[str, Any]]:
+def optimize_allocations(
+    incidents: List[Incident], 
+    resources: List[Resource],
+    constraints: Optional[Dict[str, Any]] = None
+) -> List[Dict[str, Any]]:
     """
-    Uses Google OR-Tools CP-SAT solver to recommend resource allocations.
-    Prioritizes critical incidents.
+    CP-SAT solver allocating resources to active incidents based on severity prioritization and suitability.
     Never recommends more of a resource than `quantity_available`.
     Considers geographic distance and user-provided optimization constraints.
     Eligible resource statuses: `available` and `partially_deployed` (with positive quantity_available).
     """
+    # Parse and validate constraints dictionary before solver execution
+    constraints = constraints or {}
+    max_dist = constraints.get("maximum_distance")
+    req_cats = constraints.get("required_resource_categories")
+    excl_ids = set(constraints.get("excluded_resource_ids") or [])
+    max_alloc = constraints.get("maximum_allocation")
+
+    if max_dist is not None:
+        if not isinstance(max_dist, (int, float)) or max_dist < 0:
+            raise ValueError(f"maximum_distance constraint must be a non-negative number, got {max_dist}")
+    if max_alloc is not None:
+        if not isinstance(max_alloc, int) or max_alloc < 0:
+            raise ValueError(f"maximum_allocation constraint must be a non-negative integer, got {max_alloc}")
+
     try:
         active_incidents = [i for i in incidents if i.status not in ["resolved"]]
         
@@ -88,13 +105,6 @@ def optimize_allocations(incidents: List[Incident], resources: List[Resource], c
                 (hasattr(r.status, 'value') and r.status.value in ["available", "partially_deployed"])
             )
         ]
-
-        # Parse and validate constraints dictionary
-        constraints = constraints or {}
-        max_dist = constraints.get("maximum_distance")
-        req_cats = constraints.get("required_resource_categories")
-        excl_ids = set(constraints.get("excluded_resource_ids") or [])
-        max_alloc = constraints.get("maximum_allocation")
 
         # Warn on unsupported keys
         supported_keys = {"maximum_distance", "required_resource_categories", "excluded_resource_ids", "maximum_allocation"}

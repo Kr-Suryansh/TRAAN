@@ -35,6 +35,23 @@ class ResourceStatus(str, Enum):
     deployed = "deployed"
     maintenance = "maintenance"
 
+class SOSStatus(str, Enum):
+    pending_local = "pending_local"
+    in_relay = "in_relay"
+    uploaded = "uploaded"
+
+class IncidentStatus(str, Enum):
+    new = "new"
+    acknowledged = "acknowledged"
+    dispatched = "dispatched"
+    resolved = "resolved"
+
+class DispatchStatus(str, Enum):
+    dispatched = "dispatched"
+    en_route = "en_route"
+    arrived = "arrived"
+    completed = "completed"
+
 class Location(BaseModel):
     lat: float
     lng: float
@@ -65,7 +82,7 @@ class SOSRequest(BaseModel):
     contact_number: Optional[str] = None
     relay_hop_count: int = 0
     last_relayed_at: datetime
-    status: str = "pending_local"
+    status: SOSStatus = SOSStatus.pending_local
 
 class Flags(BaseModel):
     medical_emergency: bool = False
@@ -93,9 +110,19 @@ class Incident(BaseModel):
     flags: Flags = Field(default_factory=Flags)
     first_reported_at: datetime
     last_updated_at: datetime
-    status: str = "new"
+    status: IncidentStatus = IncidentStatus.new
     recommended_resources: List[RecommendedResource] = []
     assigned_resources: List[str] = []
+
+class DispatchRecord(BaseModel):
+    dispatch_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    incident_id: str
+    resource_id: str
+    quantity_dispatched: int
+    dispatched_by: str
+    dispatched_at: datetime
+    eta_minutes: Optional[int] = None
+    status: DispatchStatus = DispatchStatus.dispatched
 
 class Resource(BaseModel):
     resource_id: str = Field(default_factory=lambda: str(uuid.uuid4()))

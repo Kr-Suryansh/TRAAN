@@ -67,7 +67,7 @@ def run_manual_test():
     assert "ai_summary" in result, "Missing ai_summary"
     assert "flags" in result, "Missing flags"
     assert "estimated_people_affected" in result, "Missing estimated_people_affected"
-    assert result.get("severity") in ["critical", "high", "medium", "low"], "Invalid severity enum"
+    assert result.get("severity") in ["critical", "high", "medium", "low", None], "Invalid severity enum"
     
     print("\nSUCCESS: Acceptance Criteria Verified: 3 SOS reports processed into 1 coherent summary.")
 

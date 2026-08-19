@@ -1,6 +1,6 @@
 fastapi==0.111.0
 pydantic==2.8.2
-google-genai==0.3.0
-ortools
+google-genai==1.5.0
+ortools==9.10.4067
 sqlalchemy==2.0.31
 pytest==8.2.2

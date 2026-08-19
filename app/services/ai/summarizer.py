@@ -131,10 +131,20 @@ def _get_fallback_summary(sos_reports: List[SOSRequest] = None) -> Dict[str, Any
             "ai_success": False
         }
         
-    # Basic deterministic flags based on raw emergency_type
-    medical = any(r.emergency_type == 'medical' or r.medical_snapshot for r in sos_reports)
-    trapped = any(r.emergency_type == 'trapped' for r in sos_reports)
-    structural = any(r.emergency_type == 'structural_collapse' for r in sos_reports)
+    def _is_medical_report(r: SOSRequest) -> bool:
+        em_type = r.emergency_type.value if hasattr(r.emergency_type, 'value') else str(r.emergency_type)
+        if em_type == 'medical':
+            return True
+        if r.custom_message:
+            msg = r.custom_message.lower()
+            medical_keywords = ["injury", "injured", "bleeding", "cardiac", "stroke", "unconscious", "heart attack", "fracture", "ambulance"]
+            if any(k in msg for k in medical_keywords):
+                return True
+        return False
+
+    medical = any(_is_medical_report(r) for r in sos_reports)
+    trapped = any((r.emergency_type.value if hasattr(r.emergency_type, 'value') else str(r.emergency_type)) == 'trapped' for r in sos_reports)
+    structural = any((r.emergency_type.value if hasattr(r.emergency_type, 'value') else str(r.emergency_type)) == 'structural_collapse' for r in sos_reports)
     
     # Safe non-double-counting estimate: use maximum reported count
     people_counts = [r.people_count for r in sos_reports if r.people_count is not None and r.people_count > 0]

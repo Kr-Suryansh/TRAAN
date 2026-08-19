@@ -68,6 +68,23 @@ def test_ai_summarizer_fallback(sample_flooding_reports):
     assert result["flags"]["trapped"] is True # At least one report has 'trapped'
     assert result["estimated_people_affected"] == 4 # Max count (4), NOT sum (8)!
     assert result["severity"] is None # Must NOT fabricate AI severity
+
+def test_medical_flag_fallback_semantics():
+    from app.models.schemas import UserMedicalProfile
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    report = SOSRequest(
+        device_id="dev_med_profile",
+        created_at=now,
+        location=Location(lat=30.0, lng=78.0),
+        is_quick_sos=False,
+        emergency_type=EmergencyType.flood_rescue,
+        people_count=2,
+        medical_snapshot=UserMedicalProfile(medical_conditions=["diabetic"]),
+        last_relayed_at=now
+    )
+    result = _get_fallback_summary([report])
+    assert result["flags"]["medical_emergency"] is False
     assert result["ai_success"] is False
 
 @patch("app.services.ai.summarizer.get_client")

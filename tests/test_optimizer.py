@@ -384,3 +384,14 @@ def test_optimizer_constraints(now):
     for a in assign_cap:
         assert a["quantity"] <= 1
 
+def test_optimizer_invalid_constraints(now):
+    loc = Location(lat=30.0, lng=78.0)
+    incidents = [Incident(cluster_id="c1", location=loc, first_reported_at=now, last_updated_at=now)]
+    resources = [Resource(category=ResourceCategory.rescue, sub_type="boat", custodian_agency="A1", quantity_total=5, quantity_available=5, location=loc, contact="112", last_updated_at=now)]
+    
+    with pytest.raises(ValueError):
+        optimize_allocations(incidents, resources, constraints={"maximum_distance": -50})
+
+    with pytest.raises(ValueError):
+        optimize_allocations(incidents, resources, constraints={"maximum_allocation": -1})
+

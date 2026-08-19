@@ -1,39 +1,48 @@
 # SIH Backend — Disaster Response Coordination Platform
 
-Backend services for the SIH 2026 Disaster Response Coordination Platform. This repository contains the FastAPI backend, AI processing (Gemini), resource optimization (OR-Tools), and mock IDRN resource registry.
+Backend services for Component E (AI + Resource Intelligence) of the SIH 2026 Disaster Response Coordination Platform. This repository contains the AI processing services (Gemini API), resource allocation optimizer (Google OR-Tools), and mock IDRN resource registry.
 
 ## Project Structure
 
 ```
 sih-backend/
 ├── app/
+│   ├── db/
+│   │   ├── database.py           # SQLAlchemy Engine, SessionLocal, init_db, get_db
+│   │   └── models.py             # ResourceModel and IncidentModel DB tables
 │   ├── models/
-│   │   └── schemas.py            # Pydantic models (Incident, Resource, SOS, etc.)
+│   │   └── schemas.py            # Shared Pydantic models & enums (Incident, Resource, SOS, etc.)
 │   └── services/
 │       ├── ai/
-│       │   ├── client.py         # Gemini API client initialization
-│       │   ├── summarizer.py     # AI-powered incident summarization
-│       │   └── situation_brief.py # Situation brief generation
+│       │   ├── client.py         # Gemini API client initialization (google-genai==1.5.0)
+│       │   ├── summarizer.py     # AI-powered incident summarization & fallback safety
+│       │   └── situation_brief.py # Situation brief generation, cache & idempotent worker
 │       ├── optimizer/
-│       │   └── allocator.py      # OR-Tools resource allocation engine
+│       │   ├── allocator.py      # OR-Tools CP-SAT resource allocation engine
+│       │   ├── incident_service.py # Incident lifecycle & DB-backed optimization logic
+│       │   └── resource_registry.py # DB-backed resource query helper functions
 │       └── mock_idrn/
 │           ├── seed.py           # Database seed script for mock resources
 │           └── data.json         # Mock IDRN resource data (Dehradun district)
 ├── tests/
 │   ├── test_optimizer.py         # OR-Tools optimizer unit tests
 │   ├── test_ai_summarizer.py     # AI summarizer unit tests
+│   ├── test_db_seed.py           # Database seed & persistence tests
+│   ├── test_incident_integration.py # Incident lifecycle integration tests
+│   ├── test_p0_remediation.py    # Remediation tests (null severity, restart recovery)
+│   ├── test_situation_brief.py   # Situation brief unit & worker idempotency tests
 │   └── manual_gemini_test.py     # Manual Gemini integration test
 ├── demo_optimizer.py             # Standalone optimizer demo script
-├── requirements.txt              # Python dependencies
+├── requirements.txt              # Python dependencies (pinned)
 ├── .env.example                  # Environment variable template
-├── Agent.md                      # Component E implementation notes
+├── Agent.md                      # Component E integration documentation
 ├── ApiEndpoints.md               # API endpoint contract reference
-└── Logs.md                       # Development log
+└── Logs.md                       # Development & remediation log
 ```
 
 ## Prerequisites
 
-- **Python 3.10–3.12** (recommended; 3.13+ may have wheel compatibility issues)
+- **Python 3.10–3.12**
 - **pip** (comes with Python)
 
 ## Setup
@@ -42,7 +51,7 @@ sih-backend/
 
 ```bash
 git clone <repository-url>
-cd sih-backend
+cd TRAAN
 ```
 
 ### 2. Create a virtual environment
@@ -74,10 +83,7 @@ Edit `.env` and fill in your real values:
 | Variable | Required | Description |
 |---|---|---|
 | `GEMINI_API_KEY` | Yes (for AI features) | Google Gemini API key from [AI Studio](https://aistudio.google.com/apikey) |
-| `DATABASE_URL` | Later (Day 5+) | PostgreSQL connection string |
-| `JWT_SECRET` | Later (Day 5+) | Secret for authority JWT authentication |
-
-> **Note:** The optimizer and mock IDRN modules work without any environment variables. Only the AI summarization features require `GEMINI_API_KEY`.
+| `DATABASE_URL` | Optional | PostgreSQL connection string (defaults to local `traan.db` SQLite if unset for dev/testing) |
 
 ### 5. Run the optimizer demo
 
@@ -85,41 +91,34 @@ Edit `.env` and fill in your real values:
 python demo_optimizer.py
 ```
 
-### 6. Run the mock IDRN seed (validation only, no DB yet)
+### 6. Run the mock IDRN seed
 
 ```bash
 python -m app.services.mock_idrn.seed
 ```
 
-### 7. Run tests
+### 7. Run test suite (52 tests)
 
 ```bash
 pytest tests/ -v
 ```
 
-For optimizer tests only:
-
-```bash
-pytest tests/test_optimizer.py -v
-```
-
-## Current Implementation Status (Day 4)
+## Current Implementation Status
 
 | Component | Status | Notes |
 |---|---|---|
-| OR-Tools Optimizer | ✅ Complete | Standalone allocation engine with priority, capacity, and distance constraints |
-| Mock IDRN Registry | ✅ Complete | Seed script with real Dehradun district data from IDRN/DDMP |
-| Gemini Summarizer | ✅ Complete | Merges multiple SOS reports into one incident summary |
-| Situation Brief | ✅ Complete | Generates dashboard situation paragraph |
-| API Endpoints | ⏳ Day 5–6 | Not yet wired to FastAPI routers |
-| Database Layer | ⏳ Day 5–6 | PostgreSQL/PostGIS integration pending |
+| OR-Tools Optimizer | ✅ Complete | CP-SAT solver with priority, capacity, distance, suitability & custom constraint validation |
+| Mock IDRN Registry | ✅ Complete | Database seed script with Dehradun district public data |
+| Gemini Summarizer | ✅ Complete | Structured Pydantic output (`google-genai==1.5.0`) with failure safety & injection defense |
+| Situation Brief | ✅ Complete | Cached brief generation, thread-safe lock & idempotent worker lifecycle |
+| Database Layer | ✅ Complete | Database-backed persistence for incidents & resources; Component E acts as a service layer consuming Component D's canonical DB architecture |
 
 ## API Contract Reference
 
 See [ApiEndpoints.md](ApiEndpoints.md) for the full endpoint specification.  
 See [day1-contracts-and-repo-setup.md](../day1-contracts-and-repo-setup.md) for the canonical schema definitions.
 
-## Team
+## Team Ownership
 
-- **Component D** — Backend Core (auth, routing, DB, WebSocket)
-- **Component E** — AI + Resource Intelligence (this repo's services)
+- **Component D** — Backend Core (PostgreSQL/PostGIS DB architecture, auth, REST routing, WebSocket)
+- **Component E** — AI + Resource Intelligence (Gemini summarization/briefs, OR-Tools optimizer, mock IDRN seed logic)

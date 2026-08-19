@@ -238,6 +238,19 @@ def test_situation_brief_background_refresh():
     
     stop_periodic_refresh()
 
+def test_situation_brief_background_refresh_idempotent():
+    from app.services.ai.situation_brief import _BACKGROUND_THREAD
+    start_periodic_refresh(interval_seconds=10)
+    from app.services.ai.situation_brief import _BACKGROUND_THREAD as w1
+    assert w1 is not None and w1.is_alive()
+    
+    # Second call must be idempotent
+    start_periodic_refresh(interval_seconds=10)
+    from app.services.ai.situation_brief import _BACKGROUND_THREAD as w2
+    assert w1 is w2
+    
+    stop_periodic_refresh()
+
 @pytest.mark.skipif(not os.environ.get("GEMINI_API_KEY"), reason="Requires GEMINI_API_KEY")
 def test_real_gemini_situation_brief_api(sample_incidents, sample_resources):
     """
