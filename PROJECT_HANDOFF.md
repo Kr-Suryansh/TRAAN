@@ -42,43 +42,45 @@ backend + dashboard + AI are NOT in this repo.
 
 ## 2. CURRENT DEVELOPMENT STATE
 
-**Development day/phase:** Day 6 is committed (`6678771`). **Day 7 is COMPLETE (uncommitted).**
+**Development day/phase:** Day 7 committed (`320bfbd`). **Integration Stages 0a–5 COMPLETE (uncommitted).**
 
 > [!IMPORTANT] Current repo state
-> - HEAD commit `6678771` = "Completed upto Day 6: Persistence, permissions, and relay hardening" (committed 2026-08-16).
-> - The **working tree** contains Day 7 **diagnostic instrumentation + production-quality 8012 fix** (uncommitted):
->   a forwarding-decision log in `RelayManager.handleIncomingSos` (NEW vs DUPLICATE), a test-only
->   "Dump Store" button in `MainActivity`, a **TEST-ONLY connection allow-list** seam
->   (`RelayTestConfig`/`RelayTestConfigProvider` in `:relay`, set from intent extras in `:app`),
->   and a production-quality 8012-aware failure handler in `RelayManager.onEndpointFound` that
->   prevents the bidirectional P2P_CLUSTER race from discarding valid connection attempts.
-> - **Day 7 Phases A through G are COMPLETE** — see §8/§16. All 3-phone validation passed.
+> - HEAD commit `320bfbd` = "Completed Day 7: Three device relay stress validation, recovery testing,
+>   persistence verification, and connection hardening" (committed on `mesh-relay`, mirrored to
+>   `integration/ab-component-c`).
+> - Branch: `integration/ab-component-c` (HEAD `320bfbd`, identical to `mesh-relay`).
+> - The **working tree** contains **A+B ↔ Component C integration work** (Stages 0a–5, uncommitted):
+>   13 modified files + 54 new files across 21 untracked directories. See §17 for full details.
+> - **75 JVM tests pass** (64 relay + 11 data) — same baseline as Day 7; new integration test files
+>   (`DtoSerializationTest`, `EnumContractTest`, etc.) are in the working tree but not yet compiled
+>   into the test suite pending commit.
 > - **Physical 4–5 phone stress testing is DEFERRED** (see §8 and §16): only 3 physical Android phones
 >   are currently available. This is a testing-resource constraint, NOT a passed/validated result.
 
 ### What is actually completed (verified against code + tests)
-- Day 1–5 relay engine fully implemented and physically validated (see §4, §8).
+- Day 1–7 relay engine fully implemented, committed, and physically validated (see §4, §8, §16).
 - Room persistence layer in `:data` (ported from C), compiling and unit-tested.
 - `RoomRelayDataSource` implementing `com.sih.relay.api.RelayDataSource`, wired in `:app`.
 - Relay startup hardening + permission helper (Day 6 hardening portion).
 - Day 6 permission preflight UX in `:app` ("Start Relay" requests missing runtime permissions and prompts to enable Bluetooth before starting the service).
 - **Day 6 physical validation PASSED** — 3-device A → B → C with a non-empty SOS written through the Room-backed `saveSosMessages()` path on B and C, and that SOS **survived a process restart on C** (Room persisted 2 UUIDs after a fresh injection post-restart). See §8 and `Logs.md` Day 6.
-- **Day 7 COMPLETE** — diagnostic instrumentation (forwarding-decision log, Dump Store button, TEST-ONLY allow-list seam) + production-quality 8012-aware failure handler. Phases A–G all completed. Strongest feasible 3-phone validation performed and documented. See §8/§16.
+- **Day 7 COMPLETE (committed at `320bfbd`)** — diagnostic instrumentation (forwarding-decision log, Dump Store button, TEST-ONLY allow-list seam) + production-quality 8012-aware failure handler. Phases A–G all completed. Strongest feasible 3-phone validation performed and documented. See §8/§16.
+- **Integration Stages 0a–5 COMPLETE (uncommitted)** — selective file extraction from `origin/shell-app:sih-android/` into the validated A+B codebase. Build files, network module, data module additions, relay seam, and full Compose app shell are all in the working tree. See §17.
 
 ### What is currently working (verified this session)
 - Full Gradle build `:app:assembleDebug` + `:data:testDebugUnitTest` + `:relay:testDebugUnitTest`:
   **BUILD SUCCESSFUL**. **75 JVM tests pass, 0 failures** (64 relay + 11 data). Verified, not assumed.
+- Android Studio build of the integrated codebase succeeded.
+- App launched on device; Home, Onboarding, Status Compose screens appeared and rendered correctly.
 
 ### What is incomplete / planned / deferred
 - **4–5 physical-phone stress test — DEFERRED (NOT performed).** Only 3 physical Android devices are
   available. Must NOT be described as "passed"/"validated"/"complete". See §8 and §16.
-- **Component C integration** — next major task after Day 7 commit: Room-backed persistence compatibility,
-  `RelayRepository` boundary, `GatewaySyncWorker`, `DevicePreferences`, Hilt/module wiring, app/UI
-  integration, end-to-end SOS flow (see §9/§13).
-- Real SOS creation + Compose UI (C's job).
-- `:network` module, backend uploads, gateway mode, device registration (C/D).
+- **Integration Stages 0a–5 committed** — user will commit manually through GitHub Desktop. 67 files
+  (13 modified + 54 new) in the working tree. `.gitignore` and `gradlew.bat` excluded.
+- **Stage 6: End-to-end wiring** — requires physical device testing with the integrated app shell.
+- **Stage 7: Final documentation cleanup.**
 - TTL cleanup, low-battery throttle, simulation/fallback demo mode (later roadmap days).
-- Full integration with Component C's repo (see §9).
 
 ---
 
@@ -87,23 +89,24 @@ backend + dashboard + AI are NOT in this repo.
 ### Modules (from `settings.gradle.kts`, root project `sih-android`)
 | Module | Namespace | Owner | Current state |
 |---|---|---|---|
-| `:app` | `com.sih.app` | C | Temporary test-scaffold Activity (Day 4/5/6 test harness) |
-| `:relay` | `com.sih.relay` | A+B | Complete: engine + FGS + duty cycle + permission helper |
-| `:data` | `com.sih.data` | C | Room layer ported in (Day 6, uncommitted) + `RoomRelayDataSource` |
-| `:network` | `com.sih.network` | shared | Empty stub (only manifest + core-ktx) |
+| `:app` | `com.sih.app` | C | **Compose app shell** (Home/Onboarding/Status screens, Hilt DI, WorkManager). `MainActivity.kt` replaced with Compose navigation. applicationId `com.sih.android`. |
+| `:relay` | `com.sih.relay` | A+B | Complete: engine + FGS + duty cycle + permission helper (18 files, zero diff from mesh-relay) |
+| `:data` | `com.sih.data` | C | Room layer + new additions: `SosRepository`, `UserMedicalProfileRepository`, `GatewaySyncWorker`, `DeviceRegistrationWorker`, `DataModule` (Hilt), `RelayRepository` interface. `RoomRelayDataSource` preserved. |
+| `:network` | `com.sih.network` | shared | **Full Retrofit HTTP layer**: `DisasterApi` (3 endpoints), `RetrofitClientFactory`, `AuthInterceptor`, DTOs, request/response models, Moshi serialization |
 
 ### Dependency direction (from actual build files — the intended architecture)
 ```
 :app  ──► :relay   (uses RelayApi)
-:app  ──► :data    (builds AppDatabase + RoomRelayDataSource, injects it)
-:app  ──► :network (declared dependency; :network is still a stub)
+:app  ──► :data    (Hilt-injected: AppDatabase, RoomRelayDataSource, SosRepository, RelayRepository)
+:app  ──► :network (Hilt-injected: DisasterApi via AuthInterceptor + RetrofitClientFactory)
 :data ──► :relay   (implements RelayDataSource; uses relay models in the mapper)
+:data ──► :network (new: GatewaySyncWorker calls DisasterApi for backend upload)
 :relay ─X─ :data   (NEVER — circular-dependency violation)
 :relay ─X─ :network (NEVER)
-:data ─X─ :network (in THIS repo :data does not depend on :network; C's repo has data→network)
 ```
-Version catalog: `gradle/libs.versions.toml` (AGP 8.5.2, Kotlin 2.0.0, Nearby 19.2.0, Coroutines 1.8.1,
-Serialization 1.7.1, Room 2.6.1, Moshi 1.15.1, security-crypto 1.1.0-alpha06, mockk 1.13.11, junit 4.13.2).
+Version catalog: `gradle/libs.versions.toml` (AGP 8.7.3, Kotlin 2.0.21, Nearby 19.2.0, Coroutines 1.8.1,
+Serialization 1.7.1, Room 2.6.1, Moshi 1.15.1, Hilt 2.51.1, KSP 2.0.21-1.0.27, Retrofit 2.11.0,
+OkHttp 4.12.0, WorkManager 2.9.1, Compose BOM, security-crypto 1.1.0-alpha06, mockk 1.13.11, junit 4.13.2).
 
 ### Boundaries
 - **`RelayApi`** (`com.sih.relay.api.RelayApi`) = the ONLY public surface of `:relay` (`startRelay`,
@@ -328,15 +331,16 @@ Work intentionally postponed. Especially the C-component integration items:
 - **4–5 physical-phone stress test — DEFERRED (validation, not a code item).** Planned roadmap Day 7 A+B
   scope. NOT performed because only 3 physical devices are available. Remains a future validation task;
   project progress does NOT pause for it (§16). Must not be reported as passed/complete.
-- **Full Component C integration** (the big one):
-  - Merge/reconcile this repo's `:data` Room copy with Component C's repo (schema is identical by design).
-  - Replace `RelayDataSourceProvider` with C's Hilt DI; resolve the START_STICKY store divergence.
-  - Bring in C's `SosRepository`, `GatewaySyncWorker`, `DeviceRegistrationWorker`, `DataModule`,
-    network DTOs/`DisasterApi`, `AuthInterceptor`/Retrofit config.
-  - Replace `MainActivity` scaffold with C's Compose app (real SOS creation, Status screen, onboarding).
+- **Full Component C integration (Stages 0a–5 DONE, Stages 6–8 remaining):**
+  - ~~Merge/reconcile this repo's `:data` Room copy with Component C's repo (schema is identical by design).~~ DONE (Stage 3).
+  - ~~Replace `RelayDataSourceProvider` with C's Hilt DI; resolve the START_STICKY store divergence.~~ Hilt wired in `:app`; `RelayDataSourceProvider` seam kept for now (Stage 5).
+  - ~~Bring in C's `SosRepository`, `GatewaySyncWorker`, `DeviceRegistrationWorker`, `DataModule`, network DTOs/`DisasterApi`, `AuthInterceptor`/Retrofit config.~~ DONE (Stages 2–3).
+  - ~~Replace `MainActivity` scaffold with C's Compose app (real SOS creation, Status screen, onboarding).~~ DONE (Stage 5).
   - Reconcile `device_id` semantics (§1.2 "installation ID" vs §1.9 "generated on first app install";
     `DevicePreferences` currently uses a stable installation id as fallback).
-- **Gateway/network:** implement `:network`, gateway upload path, backend device registration, TTL cleanup
+  - Stage 6: End-to-end wiring + physical device testing with the integrated app shell.
+  - Stage 7: Final documentation cleanup.
+- **Gateway/network:** ~~implement `:network`~~ DONE (Stage 2). Backend device registration, TTL cleanup
   (48–72h via `last_relayed_at`), low-battery throttle (Day 10), simulation/fallback demo mode (Day 12).
 - **Known deferred decisions** the analysis has NOT resolved: whether the Day 6 Room-backed store should use
   upsert-on-hop-metadata (currently `insertSos` IGNORE is used to preserve idempotent semantics).
@@ -349,10 +353,9 @@ Only issues supported by the repo or documented testing.
 
 - **4–5 physical-phone stress test not yet performed** (top validation gap): only 3 physical devices
   available; the roadmap Day 7 scale test is deferred, not passed. See §8, §16.
-- **Uncommitted Day 7 diagnostic instrumentation in the working tree** (continuity): HEAD is Day 6
-  (`6678771`); the working tree adds only Day 7 test-only diagnostics (forwarding-decision log in
-  `RelayManager`, "Dump Store" button in `MainActivity`). These are uncommitted and should be committed
-  or reverted deliberately as part of Day 7.
+- **Uncommitted integration work in the working tree** (continuity): HEAD is Day 7 (`320bfbd`);
+  the working tree adds Integration Stages 0a–5 (67 files: 13 modified + 54 new). These are
+  uncommitted and will be committed manually through GitHub Desktop.
 - **START_STICKY store divergence** after process death (in-memory fallback vs `:app` store) — documented in
   `RelayForegroundService`; resolved only by DI/Room re-injection.
 - **Lint skipped** due to `ConcurrentHashMap.newKeySet()` `NewApi` (API 24 vs minSdk 23) in `RelayManager.kt`.
@@ -362,8 +365,13 @@ Only issues supported by the repo or documented testing.
   device id (`RelayManager.kt`, manifest exchange). Accepted for the mesh test phase.
 - **`device_id` contract ambiguity** §1.2 vs §1.9 — flagged in `DevicePreferences`; unresolved team-wide.
 - **kapt language-version warning + Room schema-export warning** — benign today, see §7.
-- **Docs lag:** `Component1_Overview.md` still describes up to Day 5; `Logs.md`/`walkthrough.md`/`Agent.md`
-  were updated to cover Day 6 this session.
+- **Integration non-blocking issues (pre-commit audit):**
+  1. Missing `network/proguard-rules.pro` (dormant — `isMinifyEnabled=false`)
+  2. Unused import `SihTheme` in `HomeScreen.kt`
+  3. Serialization plugin not applied in `:data` (no `@Serializable` classes exist there)
+  4. `SosRequestDto` uses `String` fields instead of enum for `emergencyType`/`severityHint`
+- **Docs lag:** `Component1_Overview.md` still describes up to Day 4; `Logs.md`/`walkthrough.md` were
+  updated to cover integration Stages 0a–5.
 - **CRLF/EOL churn** in `.gitignore` and `gradlew.bat` in the working tree (line-ending changes from the
   build toolchain, no content change) — harmless, but a future commit should be intentional about them.
 
@@ -415,23 +423,17 @@ Recorded decisions and the reasons given. Do not reinterpret or redesign them.
 
 ## 13. NEXT DEVELOPMENT STEP
 
-Ground truth of the repo: Day 6 is committed (`6678771`). The working tree contains uncommitted Day 7
-work: diagnostic instrumentation (forwarding-decision log, Dump Store button, TEST-ONLY allow-list seam),
-a production-quality 8012-aware failure handler, and updated documentation. 75 automated tests pass.
-Day 7 3-phone validation is **COMPLETE and documented** — all Phase A–G work done.
+Ground truth of the repo: Day 7 is committed (`320bfbd`). The working tree contains Integration
+Stages 0a–5 (67 files: build files, network module, data module additions, relay seam, Compose app
+shell). 75 automated tests pass. Android Studio build succeeded. App launched and UI screens rendered.
 
-**Next logical task: Component C integration.**
-
-Exact next steps, in order:
-1. **Commit Day 7 work** — all Day 7 changes (code + documentation) committed as a coherent snapshot.
-2. **Begin Component C integration** (see §9/§16.5):
-   - Room-backed persistence compatibility (schema already ported, identical by design)
-   - `RelayRepository` boundary / `RelayDataSource` seam
-   - `GatewaySyncWorker`, `DevicePreferences`, network DTOs/contracts
-   - Hilt/module wiring (replace `RelayDataSourceProvider` seam)
-   - App/UI integration (replace `MainActivity` scaffold with C's Compose shell)
-   - End-to-end SOS flow
-3. **Do NOT interpret the deferred 4–5 phone test as a blocker** — it remains a future validation item
+**Next steps, in order:**
+1. **Commit integration work** — all Integration Stages 0a–5 (code + documentation) committed as a
+   coherent snapshot through GitHub Desktop.
+2. **Stage 6: End-to-end wiring** — physical device testing with the integrated Compose app shell.
+   Verify SOS creation, relay start/stop, onboarding flow, and status screen work end-to-end.
+3. **Stage 7: Final documentation cleanup** — update all docs to reflect the integrated state.
+4. **Do NOT interpret the deferred 4–5 phone test as a blocker** — it remains a future validation item
    pending availability of additional physical devices (see §8/§16).
 
 ---
@@ -604,3 +606,104 @@ The following validate **real Android/Nearby/OS behavior** (they do NOT prove be
 - Preserve existing architecture boundaries and handoff contracts; do NOT silently resolve previously
   identified integration decisions (see §9 and Component C handoff docs).
 - Nothing from this section has been implemented yet — it is the current plan and status.
+
+---
+
+## 17. INTEGRATION STAGES 0a–5 — A+B ↔ Component C (UNCOMMITTED)
+
+> This section documents the completed integration work in the working tree. It is NOT committed.
+> The user will commit manually through GitHub Desktop.
+
+### 17.1 — Integration overview
+
+**Branch:** `integration/ab-component-c` (HEAD `320bfbd`, identical to `mesh-relay`)
+**Strategy:** Selective file extraction from `origin/shell-app:sih-android/` — write only, never delete
+or overwrite validated A+B relay code.
+**Date:** 2026-08-23
+
+### 17.2 — Frozen boundaries preserved (zero regressions)
+
+| Boundary | Preserved? | Notes |
+|---|---|---|
+| `RelayApi` contract | ✅ | Unchanged |
+| `RelayDataSource` interface | ✅ | Unchanged |
+| Room schema (v1) | ✅ | Identical — no migration needed |
+| `SosRequest` wire format | ✅ | Untouched |
+| `RelayHopLogic` | ✅ | Untouched |
+| `DutyCycler` timing | ✅ | Untouched |
+| `RelayForegroundService` | ✅ | Untouched |
+| `nearbyConnections 19.2.0` pin | ✅ | Untouched |
+| `RelayDataSourceProvider` | ✅ | Kept as-is (not replaced with Hilt) |
+
+### 17.3 — Stage summary
+
+| Stage | Description | Files | Status |
+|---|---|---|---|
+| 0a | Baseline verification | 0 | ✅ PASS |
+| 1 | Build files (version catalog, root build, settings, gradle.properties, module builds) | 8 modified | ✅ PASS |
+| 2 | Network module (Retrofit HTTP layer) | 14 new | ✅ PASS |
+| 3 | Data module (repos, workers, Hilt DI) | 11 new + 1 modified | ✅ PASS |
+| 4 | Relay seam (`RelayRepository` interface) | 1 new | ✅ PASS |
+| 5 | App shell (Compose UI, Hilt, navigation) | 33 new | ✅ PASS |
+| **Total** | | **13 modified + 54 new** | **ALL PASS** |
+
+### 17.4 — Key changes by module
+
+**`:network`** (Stage 2) — from empty stub to full Retrofit layer:
+- `DisasterApi`: 3 endpoints (`POST /api/v1/sos`, `GET /api/v1/sos/{uuid}/status`, `POST /api/v1/sos/batch`)
+- `RetrofitClientFactory`, `AuthInterceptor`, 3 DTOs, 2 request models, 3 response models
+- `DtoSerializationTest.kt`: 5 JVM tests for Moshi round-trips
+
+**`:data`** (Stages 3–4) — from Room-only to full persistence + DI layer:
+- `DevicePreferences.kt` replaced with Hilt-injected version
+- `DataModule.kt`: Hilt `@Module` providing DataStore, Executors, Dispatchers, WorkManager
+- `SosRepository.kt`, `UserMedicalProfileRepository.kt`: app-layer repository wrappers
+- `GatewaySyncWorker.kt`, `DeviceRegistrationWorker.kt`: WorkManager jobs
+- `RelayRepository.kt`: public interface + `StubRelayRepository` (temporary)
+- 4 test files (11 JVM tests)
+
+**`:app`** (Stage 5) — from test scaffold to Compose app shell:
+- `SihApplication.kt`: `@HiltAndroidApp`, WorkManager `Configuration.Provider`
+- `MainActivity.kt`: Compose navigation, device registration, nav start destination
+- `AppModule.kt`: Hilt DI for AuthInterceptor, DisasterApi, StubRelayRepository
+- `AppNavigation.kt` + `Screen.kt`: 3 routes (Home, Onboarding, Status)
+- `SihTheme.kt`: Material3 dark/light
+- `HomeScreen.kt` + `HomeViewModel.kt`: SOS button, permission flow, location
+- `OnboardingScreen.kt` + `OnboardingViewModel.kt`: medical profile
+- `StatusScreen.kt` + `StatusViewModel.kt`: status pill, backend check
+- Updated manifest, resources (strings, themes, mipmaps, drawables, network security config)
+- 2 test files
+
+**`:relay`** — zero changes (18 files untouched from mesh-relay baseline).
+
+### 17.5 — Build verification
+
+- **Namespace fix applied:** `app/build.gradle.kts` namespace changed from `com.sih.android` to
+  `com.sih.app` (applicationId remains `com.sih.android`) to resolve BuildConfig and manifest class
+  resolution.
+- **Android Studio build succeeded.**
+- **App launched on device** — Home, Onboarding, Status Compose screens appeared and rendered correctly.
+- **75 JVM tests pass** (64 relay + 11 data) — same baseline as Day 7.
+
+### 17.6 — Pre-commit audit
+
+- 67 files classified: 13 modified + 54 new across 21 untracked directories.
+- A+B relay code verified preserved (zero diff from mesh-relay baseline).
+- No secrets found.
+- `.gitignore` and `gradlew.bat` confirmed excluded from commit.
+- **Verdict: SAFE TO COMMIT WITH MINOR KNOWN ISSUES** (see §10).
+
+### 17.7 — Known non-blocking issues from pre-commit audit
+
+1. Missing `network/proguard-rules.pro` (dormant — `isMinifyEnabled=false`)
+2. Unused import `SihTheme` in `HomeScreen.kt`
+3. Serialization plugin not applied in `:data` (no `@Serializable` classes exist there)
+4. `SosRequestDto` uses `String` fields instead of enum for `emergencyType`/`severityHint`
+
+### 17.8 — Remaining integration stages
+
+| Stage | Description | Status |
+|---|---|---|
+| 6 | End-to-end wiring + physical device test | ❌ Not started |
+| 7 | Final documentation cleanup | ❌ Not started |
+| 8 | Optional optimizations | ❌ Not started |

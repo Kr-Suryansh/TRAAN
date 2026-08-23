@@ -20,6 +20,8 @@
 | **Day 4 status** | 3-phone multi-hop relay (A → B → C) — COMPLETE and physically verified |
 | **Day 5 status** | Foreground service + duty cycling — COMPLETE and physically verified (3-device) |
 | **Day 6 status** | Room persistence + permission preflight + relay hardening — COMPLETE, physically verified (3-device + persistence-across-restart on C) |
+| **Day 7 status** | Diagnostic instrumentation + 3-phone stress validation — COMPLETE (committed `320bfbd`) |
+| **Integration status** | Stages 0a–5 A+B ↔ Component C — COMPLETE (uncommitted, pending manual commit) |
 
 ---
 
@@ -133,9 +135,9 @@ exact Pixel 8 logcat sequence.
 - **Day 7 is COMPLETE.** Proceeding to Component C integration. See `PROJECT_HANDOFF.md` §16.
 
 ### Not yet implemented (scheduled per roadmap)
-- **Component C integration** — next major task: Room-backed persistence compatibility, `RelayRepository`
-  boundary, `GatewaySyncWorker`, `DevicePreferences`, Hilt/module wiring, app/UI integration, end-to-end
-  SOS flow. See `PROJECT_HANDOFF.md` §9/§13.
+- **Integration Stages 0a–5 COMPLETE (uncommitted)** — build files, network module, data module additions,
+  relay seam, Compose app shell all in working tree. Pending manual commit through GitHub Desktop.
+- **Integration Stage 6** — end-to-end wiring + physical device testing with the integrated app shell.
 - TTL cleanup (`last_relayed_at` expiry, 48-72h) → later
 - Low-battery throttle mode → Day 10
 - Simulation/fallback demo mode → Day 12

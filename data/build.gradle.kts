@@ -1,18 +1,8 @@
-// :data — Android Library module
-// Owner: Component C
-// Responsibilities: Room DB, Room entities, DAOs, WorkManager upload jobs.
-// Day 6: Populated with Component C's Room persistence infrastructure (ported
-//        verbatim from the C repo) plus the RoomRelayDataSource that implements
-//        RelayDataSource (from :relay) so the relay mesh persists SOS records
-//        in Room instead of the temporary in-memory test store.
-//
-// Room annotation processing uses kapt (not KSP) because this build uses
-// Kotlin 2.0.0 and kapt needs no version lockstep with the Kotlin plugin.
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-    kotlin("kapt")
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -21,17 +11,19 @@ android {
 
     defaultConfig {
         minSdk = 23
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+    }
+
+    buildTypes {
+        release { isMinifyEnabled = false }
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 
     testOptions {
         unitTests.isReturnDefaultValues = true
@@ -40,31 +32,44 @@ android {
 
 dependencies {
     // ── Module deps ──────────────────────────────────────────────────────
-    // :relay exposes the RelayDataSource interface + relay models. :data
-    // implements the interface — dependency direction stays :relay ↓ interface
-    // ↑ :data implementation (never :relay → :data).
+    api(project(":network"))   // expose network DTOs up to :app
     implementation(project(":relay"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services) // tasks.await() for FusedLocationProviderClient
 
     // kotlinx-serialization-json — used by the SOSRequest mapper to encode the
     // medical_snapshot JSON string (UserMedicalProfile is @Serializable in :relay).
     implementation(libs.kotlinx.serialization.json)
 
-    // ── Room (persistence) ───────────────────────────────────────────────
+    // ── Room ─────────────────────────────────────────────────────────────
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    kapt(libs.room.compiler)
+    ksp(libs.room.compiler)
 
-    // ── Moshi (JSON for Room TypeConverters) ─────────────────────────────
+    // ── WorkManager ──────────────────────────────────────────────────────
+    implementation(libs.work.runtime.ktx)
+
+    // ── Hilt (DI + HiltWorker) ────────────────────────────────────────────
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.compiler)   // required for @HiltWorker / @AssistedInject
+
+    // ── Moshi (TypeConverter JSON for Room) ───────────────────────────────
     implementation(libs.moshi.kotlin)
 
-    // ── EncryptedSharedPreferences (device identity) ─────────────────────
+    // ── EncryptedSharedPreferences ────────────────────────────────────────
     implementation(libs.security.crypto)
 
-    // ── Testing ──────────────────────────────────────────────────────────
+    // ── Location (FusedLocationProviderClient for gateway location) ───────
+    implementation(libs.play.services.location)
+
+    // ── Testing ───────────────────────────────────────────────────────────
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.room.testing)
+    testImplementation(libs.work.testing)
     testImplementation(libs.mockk)
 }

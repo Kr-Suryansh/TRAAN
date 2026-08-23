@@ -4,7 +4,10 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Secure, encrypted storage for device identity credentials.
@@ -29,12 +32,11 @@ import java.util.UUID
  * On 401 responses from any protected endpoint, callers should re-register
  * (call /auth/device/register again) to obtain a fresh jwt and call
  * [saveCredentials] with the new values.
- *
- * NOTE: Ported from the Component C repo with the Hilt injection removed (this
- * module does not use Hilt). All keys, behaviour, and storage format are identical
- * to Component C's DevicePreferences so identities are interoperable.
  */
-class DevicePreferences(private val context: Context) {
+@Singleton
+class DevicePreferences @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
     companion object {
         private const val PREFS_NAME          = "sih_secure_device_prefs"
         private const val KEY_DEVICE_ID       = "pref_device_id"
@@ -115,7 +117,7 @@ class DevicePreferences(private val context: Context) {
      */
     fun getLastSosUuid(): String? = prefs.getString(KEY_LAST_SOS_UUID, null)
 
-    /** Call from SosRepository immediately after createSos(). */
+    /** Call from [com.sih.data.repository.SosRepository] immediately after createSos(). */
     fun saveLastSosUuid(uuid: String) {
         prefs.edit().putString(KEY_LAST_SOS_UUID, uuid).apply()
     }

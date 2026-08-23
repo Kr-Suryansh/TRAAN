@@ -492,3 +492,109 @@ Interpretation (as documented, not inferred beyond the logs): the original relay
 - The deferred **4–5 phone stress test remains DEFERRED — NOT performed** and must not be treated as
   complete because of this result. See `PROJECT_HANDOFF.md` §8/§16.
 
+---
+
+## 2026-08-23 — A+B ↔ Component C Integration (Stages 0a–5)
+
+### 09:00 — Stage 0a: Baseline Verification
+
+Confirmed `integration/ab-component-c` branch HEAD `320bfbd` matches `mesh-relay` HEAD exactly.
+No diff. Clean baseline established for selective file extraction.
+
+### 09:30 — Stage 1: Build Files (8 files modified)
+
+Merged version catalog, root build, settings, gradle.properties, and all 4 module build files
+from `origin/shell-app:sih-android/` into the validated A+B codebase.
+
+Key additions to `gradle/libs.versions.toml`: Compose BOM, Hilt 2.51.1, KSP 2.0.21-1.0.27,
+Retrofit 2.11.0, Moshi 1.15.1, Room 2.6.1, WorkManager 2.9.1, OkHttp 4.12.0, Location, CoreKtx.
+All existing TRAAN entries preserved (including `nearbyConnections 19.2.0`).
+
+`app/build.gradle.kts`: full Compose + Hilt + KSP + Room + WorkManager + Location + Moshi
+dependency block. **Namespace `com.sih.app`** (applicationId `com.sih.android`).
+
+Dependency chain verified: `:app → :data → :relay → :network` (no cycles).
+
+### 10:00 — Stage 2: Network Module (14 files created)
+
+Created full Retrofit HTTP layer in `:network`:
+
+- `DisasterApi`: 3 endpoints (`POST /api/v1/sos`, `GET /api/v1/sos/{uuid}/status`, `POST /api/v1/sos/batch`)
+- `RetrofitClientFactory`: typed Retrofit instance creation
+- `AuthInterceptor`: `Authorization: Bearer <deviceId>` header
+- 3 DTOs (`SosRequestDto`, `SosBatchRequestDto`, `SosStatusDto`)
+- 2 request models (`SosCreateRequest`, `SosBatchUploadRequest`)
+- 3 response models (`SosSubmitResponse`, `SosBatchResponse`, `SosStatusResponse`)
+- `AndroidManifest.xml`: `INTERNET` + `ACCESS_NETWORK_STATE` permissions
+- `DtoSerializationTest.kt`: 5 JVM tests for Moshi round-trips
+
+Zero A+B code modified.
+
+### 10:30 — Stage 3: Data Module (11 new + 1 modified)
+
+Added App-layer persistence, repository, and WorkManager workers:
+
+- `DevicePreferences.kt`: **REPLACED** with Hilt-injected version (`@Singleton @Inject constructor(@ApplicationContext)`)
+- `DataModule.kt`: Hilt `@Module` — provides `DataStore<Preferences>`, `Executors`, `Dispatchers`, `WorkManager`
+- `SosRepository.kt`: wraps DAO + dispatcher for app-layer use
+- `UserMedicalProfileRepository.kt`: wraps medical profile DAO
+- `GatewaySyncWorker.kt`: WorkManager periodic backend upload job
+- `DeviceRegistrationWorker.kt`: WorkManager device registration job
+- `SosConstants.kt`: constants
+- `consumer-rules.pro`: ProGuard rules
+- 4 test files (11 JVM tests total)
+
+All 11 existing A+B data files preserved with zero diff.
+
+### 11:00 — Stage 4: Relay Seam (1 file)
+
+Created `RelayRepository.kt` in `:data`:
+- Public interface with 2 methods: `getRelayedSosEntries()` (returns empty list initially)
+- `StubRelayRepository` (clearly marked temporary)
+- A+B relay source (18 files) untouched
+
+### 11:30 — Stage 5: App Shell (33 files)
+
+Created full Compose-based app shell from Component C:
+
+- `SihApplication.kt`: `@HiltAndroidApp`, WorkManager `Configuration.Provider`
+- `MainActivity.kt`: Compose shell, device registration, nav start destination
+- `AppModule.kt`: Hilt DI for `AuthInterceptor`, `DisasterApi`, `StubRelayRepository`
+- `AppNavigation.kt` + `Screen.kt`: 3 routes (Home, Onboarding, Status)
+- `SihTheme.kt`: Material3 dark/light
+- `HomeScreen.kt` + `HomeViewModel.kt`: SOS button, permission flow, location
+- `OnboardingScreen.kt` + `OnboardingViewModel.kt`: medical profile
+- `StatusScreen.kt` + `StatusViewModel.kt`: status pill, backend check
+- Updated manifest, resources (strings, themes, mipmaps, drawables, network security config)
+- 2 test files (`AppNavigationTest.kt`, `MainActivityUiTest.kt`)
+
+### 12:00 — Namespace fix + build verification
+
+`app/build.gradle.kts` namespace changed from `com.sih.android` to `com.sih.app`
+(applicationId remains `com.sih.android`) to resolve BuildConfig and manifest class resolution.
+
+Android Studio build succeeded. App launched on device; Home, Onboarding, Status screens appeared
+correctly. All A+B relay code preserved (zero diff from mesh-relay baseline).
+
+### 12:30 — Pre-commit audit completed
+
+67 files classified (13 modified + 54 new across 21 untracked dirs). A+B relay code verified
+preserved. No secrets found. `.gitignore` and `gradlew.bat` confirmed excluded from commit.
+
+**Pre-commit verdict: SAFE TO COMMIT WITH MINOR KNOWN ISSUES.**
+
+### Known non-blocking issues identified
+
+1. Missing `network/proguard-rules.pro` (dormant — `isMinifyEnabled=false`)
+2. Unused import `SihTheme` in `HomeScreen.kt`
+3. Serialization plugin not applied in `:data` (no `@Serializable` classes exist there)
+4. `SosRequestDto` uses `String` fields instead of enum for `emergencyType`/`severityHint`
+
+### Commit attempt blocked
+
+Git identity not configured on the system. Cannot commit via CLI.
+User will commit manually through GitHub Desktop. All 67 files unstaged via `git reset HEAD`
+to restore clean working state for manual commit.
+
+### Integration stages 0a–5 result: PASS (pending manual commit)
+

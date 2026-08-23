@@ -52,7 +52,8 @@ The `RelayApi` provides three simple commands for the app to use:
 The **`:data`** module owns the Room database. The `:relay` module does not use Room directly to maintain strict separation of concerns. If `:relay` depended on Room, the architecture would become tangled. Instead, `:relay` just defines what it needs via the `RelayDataSource` interface, and the `:data` module handles the actual database work.
 
 ## J. Current Implementation Status
-Day 1 (project scaffold, data contracts, API stubs), Day 2 (Nearby Connections P2P proof), Day 3 (manifest exchange & UUID diffing), and Day 4 (3-phone multi-hop relay) are complete and physically verified.
+Days 1–7 are complete and committed. Integration Stages 0a–5 (A+B ↔ Component C merge) are complete
+but uncommitted — pending manual commit through GitHub Desktop.
 
 **Day 2 physical proof**: Demonstrated on two real Android phones (Pixel 8 and CPH2793/Oppo) with no internet connection.
 
@@ -60,13 +61,17 @@ Day 1 (project scaffold, data contracts, API stubs), Day 2 (Nearby Connections P
 
 **Day 4 physical proof (3-phone A → B → C):** Demonstrated multi-hop relay on three physical phones with no internet. Phone A created a test SOS (UUID `153f5b02-6855-4e4c-b646-997fdc6e9638`, `relayHopCount=0`, `status=PENDING_LOCAL`). Phone B received it with `relayHopCount=1` / `IN_RELAY` and saved it, then forwarded it to Phone C, which received it with `relayHopCount=2` / `IN_RELAY` and saved it. RelayManifest/UUID synchronization worked — peers already holding the UUID reported no missing SOSRequests (no blind retransmission). See `Logs.md` for the full record. SOS delivery is phone-to-phone only; internet/cloud delivery is not part of Day 4.
 
+**Day 5–7**: Foreground service + duty cycling, Room persistence + permission preflight, diagnostic instrumentation + 3-phone stress validation — all complete and committed. See `Logs.md` and `walkthrough.md`.
+
+**Integration Stages 0a–5 (A+B ↔ Component C)**: Selective file extraction from Component C's repo into the validated A+B codebase. Build files merged (Compose, Hilt, KSP, Retrofit, Moshi, WorkManager). Network module created (full Retrofit HTTP layer). Data module extended (Hilt DI, repositories, WorkManager workers). Relay seam added (`RelayRepository` interface). Compose app shell created (Home/Onboarding/Status screens, Material3 theme, navigation). Android Studio build succeeded; app launched and UI screens rendered correctly. All A+B relay code preserved (zero diff). Pending manual commit.
+
 ## K. What is NOT Implemented Yet
-According to the 15-day roadmap, the following features will be built in the coming days:
-- Foreground service and background duty cycling (Day 5)
-- Permission flows for Bluetooth/Location (Day 6)
+- **End-to-end wiring (Stage 6)** — physical device testing with the integrated app shell
+- **Final documentation cleanup (Stage 7)**
 - Low-battery throttle mode (Day 10)
 - Fallback simulation demo mode (Day 12)
 - TTL (Time-to-Live) cleanup for expiring old messages (Later)
+- 4–5 physical-phone stress test (deferred — only 3 devices available)
 
 ## L. Building the Project
 You don't need to install Java globally. Android Studio comes with a bundled Java Runtime (JBR). You can build the project using the included Gradle wrapper by pointing to that JBR:
@@ -85,6 +90,7 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 - **Physical Device Test (Day 2)**: Confirmed end-to-end P2P SOSRequest transmission on two real Android phones (Pixel 8 → CPH2793) via Nearby Connections with no internet.
 - **Physical Device Test (Day 3)**: Confirmed bidirectional `RelayManifest` exchange, manifest decoding, and UUID diff execution on two real Android phones across different OS versions (Pixel 8 / Android 17 ↔ Vivo / Android 15) over Nearby Connections with no internet. Non-empty SOS transfer & persistence await Component C / Room integration.
 - **Physical Device Test (Day 4)**: Confirmed 3-phone A → B → C multi-hop relay on physical phones with no internet. Hop accounting verified: A created the SOS at `relayHopCount=0`/`PENDING_LOCAL`, B received it at `relayHopCount=1`/`IN_RELAY`, and C received it at `relayHopCount=2`/`IN_RELAY`; both B and C saved it via `saveSosMessages()`. RelayManifest/UUID synchronization prevented blind retransmission to peers that already held the UUID. Day 4 is COMPLETE.
+- **Integration Build (Stages 0a–5)**: Android Studio build succeeded. App launched on device; Home, Onboarding, Status Compose screens appeared and rendered correctly. All A+B relay code preserved. Namespace fix applied (`com.sih.android` → `com.sih.app`). 75 JVM tests pass (64 relay + 11 data). Pending manual commit.
 
 ## N. What the Next Developer Should Know
 - **Source of Truth**: Always refer to `day1-contracts-and-repo-setup.md` for schemas. Do not change field names or types (like changing `Float` to `Double` or renaming `UserMedicalProfile`) without a team agreement.

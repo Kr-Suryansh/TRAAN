@@ -558,3 +558,189 @@ and documented. Proceeding to Component C integration.
 Project development does NOT pause for the deferred 4–5 phone test; after the strongest feasible 3-phone
 validation, work continues to Component C integration. Nothing here is implemented beyond the diagnostics
 above; this documents the current plan and status.
+
+---
+
+## Integration Stages 0a–5 — A+B ↔ Component C Merge
+
+**Date:** 2026-08-23
+**Scope:** Selective file extraction from `origin/shell-app:sih-android/` into the validated A+B codebase
+**Branch:** `integration/ab-component-c` (HEAD `320bfbd`, identical to `mesh-relay`)
+**Strategy:** Write only — merge build files, network/data code, and app shell; never delete or overwrite validated A+B relay code
+
+### Frozen boundaries preserved (zero regressions)
+
+| Boundary | Preserved? | Notes |
+|---|---|---|
+| `RelayApi` contract | ✅ | Unchanged |
+| `RelayDataSource` interface | ✅ | Unchanged |
+| Room schema (v1) | ✅ | Identical — no migration needed |
+| `RelayRepository` public API | ✅ | Extends with 2 methods, returns empty list initially |
+| `SosRequest` wire format | ✅ | Untouched |
+| `RelayHopLogic` | ✅ | Untouched |
+| `DutyCycler` timing | ✅ | Untouched |
+| `RelayForegroundService` | ✅ | Untouched |
+| `nearbyConnections 19.2.0` pin | ✅ | Untouched |
+| `RelayDataSourceProvider` | ✅ | Kept as-is (not replaced with Hilt) |
+
+---
+
+### Stage 0a — Baseline Verification
+
+**Goal:** Confirm `integration/ab-component-c` branch is a clean clone of `mesh-relay` with no drift.
+
+**Result:** `git log --oneline` confirmed HEAD `320bfbd` matches `mesh-relay` HEAD exactly. No diff. Clean baseline established.
+
+**Stage 0a result: PASS.**
+
+---
+
+### Stage 1 — Build Files (8 files modified)
+
+**Goal:** Merge version catalog, root build, settings, gradle.properties, and all 4 module build files.
+
+**What changed:**
+
+| File | Change |
+|---|---|
+| `gradle/libs.versions.toml` | Added Compose BOM, Hilt, KSP, Retrofit, Moshi, Room, WorkManager, OkHttp, Location, CoreKtx versions (preserved all existing TRAAN entries including `nearbyConnections 19.2.0`) |
+| `build.gradle.kts` (root) | Added `hilt-android`, `ksp`, `kotlin-serialization`, `kotlin-parcelize`, `room` plugin references |
+| `settings.gradle.kts` | Added Compose compiler settings, `dependencyResolutionManagement` with Maven Central/Google/Gradle Plugin Portal repos |
+| `gradle.properties` | Added `android.useAndroidX=true`, `kotlin.code.style=official` |
+| `app/build.gradle.kts` | Full rewrite: Compose, Hilt, KSP, Room, WorkManager, Location, Moshi dependencies; **namespace `com.sih.app`** (applicationId `com.sih.android`) |
+| `data/build.gradle.kts` | Added Room, Hilt, WorkManager, DataStore, Location, Moshi dependencies alongside preserved TRAAN entries |
+| `relay/build.gradle.kts` | Added Hilt, KSP, `:network` dependency alongside preserved TRAAN entries |
+| `network/build.gradle.kts` | Added Retrofit, Moshi, OkHttp, Coroutines, Hilt, KSP dependencies |
+
+**Dependency chain verified (no cycles):** `:app → :data → :relay → :network`
+
+**Stage 1 result: PASS.**
+
+---
+
+### Stage 2 — Network Module (14 files)
+
+**Goal:** Create full Retrofit HTTP layer in `:network` — zero A+B code modified.
+
+**Files created:**
+
+| File | Purpose |
+|---|---|
+| `network/src/main/java/com/sih/network/retrofit/DisasterApi.kt` | 3 endpoints: `POST /api/v1/sos`, `GET /api/v1/sos/{uuid}/status`, `POST /api/v1/sos/batch` |
+| `network/src/main/java/com/sih/network/retrofit/RetrofitClientFactory.kt` | `RetrofitClientFactory.create(baseUrl)` — Retrofit + Moshi + OkHttp |
+| `network/src/main/java/com/sih/network/retrofit/interceptor/AuthInterceptor.kt` | `Authorization: Bearer <deviceId>` header |
+| `network/src/main/java/com/sih/network/model/dto/SosRequestDto.kt` | POST body for individual SOS submission |
+| `network/src/main/java/com/sih/network/model/dto/SosBatchRequestDto.kt` | POST body for batch upload (wraps list of `SosRequestDto`) |
+| `network/src/main/java/com/sih/network/model/dto/SosStatusDto.kt` | Response for `GET /status` |
+| `network/src/main/java/com/sih/network/model/request/SosCreateRequest.kt` | App-layer request model for creating an SOS |
+| `network/src/main/java/com/sih/network/model/request/SosBatchUploadRequest.kt` | App-layer request model for batch upload |
+| `network/src/main/java/com/sih/network/model/response/SosSubmitResponse.kt` | Backend response wrapper |
+| `network/src/main/java/com/sih/network/model/response/SosBatchResponse.kt` | Batch upload response |
+| `network/src/main/java/com/sih/network/model/response/SosStatusResponse.kt` | Status check response |
+| `network/src/main/java/com/sih/network/consumer-rules.pro` | ProGuard keep rules (empty placeholder) |
+| `network/src/main/AndroidManifest.xml` | `INTERNET` and `ACCESS_NETWORK_STATE` permissions |
+| `network/src/test/java/com/sih/network/DtoSerializationTest.kt` | 5 JVM tests: Moshi serialization round-trips for DTOs |
+
+**Network layer summary:**
+- 3 backend endpoints wired through `DisasterApi`
+- `RetrofitClientFactory` creates typed Retrofit instances
+- `AuthInterceptor` adds `Authorization` header
+- 3 DTOs + 2 request models + 3 response models
+- Moshi for JSON serialization (no Kotlinx Serialization in `:network`)
+
+**Stage 2 result: PASS.**
+
+---
+
+### Stage 3 — Data Module (11 new + 1 modified)
+
+**Goal:** Add App-layer persistence, repository, and WorkManager workers.
+
+**What changed:**
+
+| File | Change |
+|---|---|
+| `data/…/prefs/DevicePreferences.kt` | **REPLACED** with Hilt-injected version (`@Singleton @Inject constructor(@ApplicationContext context)`) |
+| `data/…/di/DataModule.kt` | **NEW** — Hilt `@Module` + `@InstallIn(SingletonComponent)`: provides `DataStore<Preferences>`, `Executors`, `Dispatchers`, `WorkManager` utilities |
+| `data/…/repository/SosRepository.kt` | **NEW** — wraps DAO + dispatcher for app-layer use |
+| `data/…/repository/UserMedicalProfileRepository.kt` | **NEW** — wraps medical profile DAO |
+| `data/…/worker/GatewaySyncWorker.kt` | **NEW** — WorkManager job for periodic backend upload |
+| `data/…/worker/DeviceRegistrationWorker.kt` | **NEW** — WorkManager job for device registration |
+| `data/src/main/java/com/sih/data/SosConstants.kt` | **NEW** — constants |
+| `data/consumer-rules.pro` | **NEW** — ProGuard rules |
+| `data/src/test/…/data/worker/GatewaySyncWorkerTest.kt` | **NEW** — 4 tests |
+| `data/src/test/…/data/repository/SosRepositoryTest.kt` | **NEW** — 2 tests |
+| `data/src/test/…/data/repository/TtlConstantTest.kt` | **NEW** — 1 test |
+| `data/src/test/…/data/model/EnumContractTest.kt` | **NEW** — 4 tests |
+
+**A+B data code preserved:** All 11 existing A+B files (`AppDatabase`, `RoomRelayDataSource`, `SosRequestMapper`, `RoomConverters`, entities, DAOs) — zero diff from mesh-relay baseline.
+
+**Stage 3 result: PASS.**
+
+---
+
+### Stage 4 — Relay Seam (1 file)
+
+**Goal:** Create public `RelayRepository` interface in `:data` so the app shell can bridge to the relay engine.
+
+**What changed:**
+
+| File | Change |
+|---|---|
+| `data/…/repository/RelayRepository.kt` | **NEW** — public interface with 2 methods; includes `StubRelayRepository` (clearly marked temporary) |
+| `relay/build.gradle.kts` | Added Hilt, KSP, `:network` dependency (already done in Stage 1) |
+
+**A+B relay source (18 files) untouched.** `RelayDataSource`, `RelayApi`, `RelayManager`, `RelayForegroundService`, `DutyCycler`, `RelayHopLogic`, `RelayPayloadCodec`, `RelayPermissionRequirements` — all zero diff from mesh-relay baseline.
+
+**Stage 4 result: PASS.**
+
+---
+
+### Stage 5 — App Shell (33 files)
+
+**Goal:** Create the full Compose-based app shell (SOS button, onboarding, status screen) from Component C.
+
+**Files created (33):**
+
+| Category | Files |
+|---|---|
+| Application class | `SihApplication.kt` (`@HiltAndroidApp`, WorkManager `Configuration.Provider`) |
+| MainActivity | `MainActivity.kt` (Compose shell, device registration via WorkManager, nav start destination) |
+| DI | `AppModule.kt` (provides `AuthInterceptor`, `DisasterApi`, `StubRelayRepository`) |
+| Navigation | `AppNavigation.kt`, `Screen.kt` (3 routes: Home, Onboarding, Status) |
+| Theme | `SihTheme.kt` (Material3 dark/light) |
+| Home screen | `HomeScreen.kt`, `HomeViewModel.kt` (SOS button, permission flow, location) |
+| Onboarding | `OnboardingScreen.kt`, `OnboardingViewModel.kt` (medical profile) |
+| Status | `StatusScreen.kt`, `StatusViewModel.kt` (status pill, backend check, connectivity) |
+| Manifest | `AndroidManifest.xml` (updated), `debug/AndroidManifest.xml` |
+| Resources | `strings.xml`, `themes.xml`, `colors.xml`, mipmaps, drawables, `network_security_config.xml` |
+| ProGuard | `proguard-rules.pro` |
+| Tests | `com.sih.app.navigation.AppNavigationTest.kt`, `com.sih.app.MainActivityUiTest.kt` |
+
+**Namespace fix applied:** `app/build.gradle.kts` namespace changed from `com.sih.android` to `com.sih.app` (applicationId remains `com.sih.android`) to resolve BuildConfig and manifest class resolution.
+
+**Pre-commit audit:** 67 files classified (13 modified + 54 new across 21 untracked dirs). A+B relay code preserved. No secrets found. `.gitignore` and `gradlew.bat` confirmed excluded.
+
+**Stage 5 result: PASS.**
+
+---
+
+### Build verification (post-Stage 5)
+
+- Android Studio build succeeded
+- App launched on device; Home, Onboarding, Status screens appeared correctly
+- Namespace fix required: `com.sih.android` → `com.sih.app` in `app/build.gradle.kts`
+- `.gitignore` and `gradlew.bat` pre-existing whitespace changes left untouched
+
+### Known non-blocking issues
+
+1. Missing `network/proguard-rules.pro` (dormant — `isMinifyEnabled=false`)
+2. Unused import `SihTheme` in `HomeScreen.kt`
+3. Serialization plugin not applied in `:data` (no `@Serializable` classes exist there)
+4. `SosRequestDto` uses `String` fields instead of enum for `emergencyType`/`severityHint` (backend contract unchanged)
+
+### Next steps
+
+- **Stage 6:** End-to-end wiring — requires physical device testing
+- **Stage 7:** Final documentation cleanup
+- **Stage 8:** Optional optimizations

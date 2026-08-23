@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -32,21 +34,27 @@ android {
 }
 
 dependencies {
-    // Nearby Connections API — core transport layer for phone-to-phone relay (Day 2+).
-    // Added now so the dependency is present before real implementation begins.
+    // ── Module deps ───────────────────────────────────────────────────────
+    implementation(project(":network"))  // for SosRequestDto in RelayRepository
+
+    // Nearby Connections API — core transport layer for phone-to-phone relay.
     implementation(libs.play.services.nearby)
 
     // Coroutines — provides Flow<List<SOSRequest>> for getRelayStore() in RelayApi.
     implementation(libs.kotlinx.coroutines.android)
 
     // JSON serialization — encodes SOSRequest and RelayManifest to/from byte arrays
-    // for transfer over Nearby Connections payload channel (Day 2+).
+    // for transfer over Nearby Connections payload channel.
     implementation(libs.kotlinx.serialization.json)
 
     // Android KTX — Kotlin extension utilities
     implementation(libs.androidx.core.ktx)
 
-    // Tests
+    // ── Hilt (for RelayRepository @Singleton @Inject) ─────────────────────
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+
+    // ── Testing ───────────────────────────────────────────────────────────
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }
