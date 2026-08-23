@@ -96,12 +96,51 @@ exact Pixel 8 logcat sequence.
 - **75 JVM tests PASS** (64 relay + 11 data). Build via JBR `gradlew.bat ... -x lint -x lintDebug` → BUILD SUCCESSFUL.
 - **Physical (3 devices, Room-backed store):** A created SOS `e9407a8a-...` (`Room now holds 1 SOS UUID(s)`); B received it (`hopCount=1`, `IN_RELAY`) and forwarded via `saveSosMessages()`; B advertised it in its known-UUID manifest; C received it (`hopCount=2`, `IN_RELAY`) and forwarded via `saveSosMessages()`.
 - **Persistence-across-restart (C):** after clearing the C process and relaunching, a fresh injection logged `Room now holds 2 SOS UUID(s)` — the relayed SOS survived the restart in `sih_local.db`.
+- **Committed** at HEAD `6678771` (2026-08-16).
+
+### Day 7 (COMPLETE — 3-phone scope; 4–5 phone test DEFERRED)
+- The planned **4–5 physical-phone stress test has NOT been completed** and is **deferred** (only 3 physical
+  devices available; testing-resource constraint, NOT a software failure; NOT reported as passed).
+- Diagnostic instrumentation + production-quality 8012 fix:
+  `RelayManager.handleIncomingSos` logs NEW-vs-DUPLICATE forwarding decisions; `MainActivity` has a
+  test-only "Dump Store" button; TEST-ONLY connection allow-list seam (`RelayTestConfig`/`RelayTestConfigProvider`);
+  production-quality 8012-aware failure handler in `RelayManager.onEndpointFound`.
+- **Phase A PASSED** — baseline green: 75/75 JVM tests, `:app:assembleDebug` BUILD SUCCESSFUL.
+- **Phase B PASSED** — 2-phone physical regression: Phone A (source) and Phone B
+  (receiver). Both started relay, advertised/discovered, connected, and exchanged
+  RelayManifest. A injected `83306893-6e6e-4065-9e9f-189a75d19616`, stored and sent it; B received the
+  exact UUID with `hopCount=1`/`IN_RELAY`, classified **NEW**, and persisted it — confirmed via the
+  "Dump Store" button (B showed 2 records total: 1 older pre-existing SOS + the new UUID; not a failure).
+  A transient Nearby 8012 `STATUS_ENDPOINT_IO_ERROR` during the initial connection request was recorded as a
+  **non-blocking observation** (devices connected and full manifest + SOS transfer succeeded).
+- **Phase C PASSED** — deterministic 3-phone A→B→C using the TEST-ONLY allow-list filter (A allowed B;
+  B allowed A,C; C allowed B). A originated SOS `62c667f9-9204-46dd-98b6-f1d32297552d`; B received it from
+  A at `hopCount=1`/`IN_RELAY`, classified **NEW**, persisted, and propagated to C; C received it from B at
+  `hopCount=2`/`IN_RELAY`, classified **NEW**, and persisted (Dump Store on C confirmed; C held 2 records —
+  1 pre-existing + the new UUID, not a failure). Transient `STATUS_ENDPOINT_IO_ERROR` (8012) and
+  `STATUS_ALREADY_CONNECTED_TO_ENDPOINT` self-recovered; end-to-end test succeeded.
+- **Phase D PASSED** — dense/concurrent/recovery testing on 3 phones:
+  - D1 multiple injections (3 UUIDs from A, all propagated A→B→C)
+  - D2 echo guard (manifest exchanges showed 0 missing SOS)
+  - D3 disconnect/reconnect (**PARTIALLY VALIDATED** — automatic self-healing observed; no clean controlled prolonged disconnect)
+  - D4 relay stop/start (C stopped/started, reconnection, new UUID `83904f98` propagated correctly)
+  - D5 process kill persistence (force-stop all 3, Room survived, reconnection succeeded)
+  - D6 hop count audit (all 4 Day 7 UUIDs confirmed A=0/B=1/C=2)
+  - D7 bidirectional injection (B and C injected, propagation confirmed)
+  - D8 sleep-window injection **NOT TESTED** (duty-cycle already validated in Day 5)
+  - 8012 race handling PASSED
+- **Phases E/F/G COMPLETE** — no additional bugs found; verification complete; documentation updated.
+- **Day 7 is COMPLETE.** Proceeding to Component C integration. See `PROJECT_HANDOFF.md` §16.
 
 ### Not yet implemented (scheduled per roadmap)
+- **Component C integration** — next major task: Room-backed persistence compatibility, `RelayRepository`
+  boundary, `GatewaySyncWorker`, `DevicePreferences`, Hilt/module wiring, app/UI integration, end-to-end
+  SOS flow. See `PROJECT_HANDOFF.md` §9/§13.
 - TTL cleanup (`last_relayed_at` expiry, 48-72h) → later
 - Low-battery throttle mode → Day 10
 - Simulation/fallback demo mode → Day 12
-- Stress-test with 4-5 phones (duplicate/dropped/stuck detection) → Day 7
+- **4–5 phone physical stress test (duplicate/dropped/stuck detection) → DEFERRED; future validation task
+  pending availability of additional physical devices.**
 
 ---
 

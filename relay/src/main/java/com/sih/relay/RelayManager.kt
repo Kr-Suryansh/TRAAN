@@ -20,6 +20,7 @@ import com.sih.relay.api.RelayApi
 import com.sih.relay.api.RelayDataSource
 import com.sih.relay.model.RelayManifest
 import com.sih.relay.model.SOSRequest
+import com.sih.relay.service.RelayTestConfigProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -69,6 +70,28 @@ class RelayManager(
 
         /** ISO 8601 UTC date-format string compatible with minSdk 23 (no java.time required). */
         private const val ISO_8601_UTC = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+
+        /**
+         * TEST-ONLY (Day 7 Phase D): the endpoint name to advertise/use while the
+         * test connection allow-list is active, otherwise the production constant.
+         */
+        fun effectiveEndpointName(): String =
+            RelayTestConfigProvider.config?.localPeerName ?: LOCAL_ENDPOINT_NAME
+
+        /**
+         * TEST-ONLY (Day 7 Phase D): true when a peer with [peerName] is permitted
+         * by the test allow-list. When no test config is set, all peers are allowed
+         * (exact current production behavior).
+         */
+        fun isPeerAllowed(peerName: String): Boolean =
+            RelayTestConfigProvider.config?.allowedPeerNames?.contains(peerName) ?: true
+
+        /**
+         * Extracts the Nearby Connections status code from a [com.google.android.gms.common.api.ApiException].
+         * Returns null if the exception is not an ApiException (e.g. SecurityException).
+         */
+        fun extractStatusCode(e: Exception): Int? =
+            (e as? com.google.android.gms.common.api.ApiException)?.statusCode
     }
 
     private val connectionsClient: ConnectionsClient by lazy {
@@ -122,6 +145,15 @@ class RelayManager(
     private val connectionLifecycleCallback = object : ConnectionLifecycleCallback() {
 
         override fun onConnectionInitiated(endpointId: String, info: ConnectionInfo) {
+            // TEST-ONLY (Day 7 Phase D): reject peers outside the test allow-list.
+            // This protects against the peer initiating toward us (onEndpointFound
+            // already guards our own requestConnection direction).
+            if (!isPeerAllowed(info.endpointName)) {
+                Log.i(TAG, "TEST-ONLY filter: rejecting connection from ${info.endpointName} (endpointId=$endpointId)")
+                connectionsClient.rejectConnection(endpointId)
+                return
+            }
+
             // Mark this endpoint as handled so onEndpointFound won't re-request a
             // connection to it while this connection is being established/accepted.
             pendingConnections.add(endpointId)
@@ -174,30 +206,56 @@ class RelayManager(
     private val endpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
 
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
+            // TEST-ONLY (Day 7 Phase D): ignore peers outside the test allow-list.
+            // Checked before pendingConnections.add so a blocked peer is never
+            // marked as "handled" and can be re-evaluated if the config changes.
+            if (!isPeerAllowed(info.endpointName)) {
+                Log.i(TAG, "TEST-ONLY filter: ignoring discovery from ${info.endpointName} (endpointId=$endpointId)")
+                return
+            }
+
             // Guard: only initiate one connection attempt per endpoint. If a connection
             // is already pending or established, ignore the duplicate discovery event
             // to avoid simultaneous/duplicate requestConnection() races (8012).
             if (!pendingConnections.add(endpointId)) {
-                Log.d(TAG, "Ignoring duplicate discovery for endpoint: $endpointId (connection pending or already connected)")
+                Log.d(TAG, "Ignoring duplicate discovery for endpoint: $endpointId (already connected or connection pending)")
                 return
             }
             Log.d(TAG, "Endpoint found: $endpointId (${info.endpointName}). Requesting connection...")
             connectionsClient.requestConnection(
-                LOCAL_ENDPOINT_NAME,
+                effectiveEndpointName(),
                 endpointId,
                 connectionLifecycleCallback
             ).addOnSuccessListener {
                 Log.d(TAG, "Connection request sent to endpoint: $endpointId")
             }.addOnFailureListener { e ->
-                // The request failed before a connection could be negotiated —
-                // allow a future discovery event to retry this endpoint.
-                pendingConnections.remove(endpointId)
-                Log.e(TAG, "Failed to request connection to endpoint: $endpointId", e)
+                // P2P_CLUSTER bidirectional race: when both phones discover each other
+                // simultaneously, both call requestConnection and the SDK fails the
+                // "losing" side with 8012 (STATUS_ENDPOINT_IO_ERROR). In that case the
+                // remote side's request may still reach us via onConnectionInitiated, so
+                // we must NOT remove from pendingConnections here — doing so would allow
+                // onEndpointFound to fire a duplicate requestConnection that conflicts
+                // with the in-progress acceptConnection.
+                //
+                // Only remove on non-8012 errors (e.g. 8007 radio error) or when the
+                // endpoint is unreachable; on 8012 the endpoint stays in pendingConnections
+                // and will be cleared by onConnectionInitiated (accept), onDisconnected,
+                // or onEndpointLost.
+                val statusCode = extractStatusCode(e)
+                if (statusCode != ConnectionsStatusCodes.STATUS_ENDPOINT_IO_ERROR) {
+                    pendingConnections.remove(endpointId)
+                    Log.e(TAG, "Failed to request connection to endpoint: $endpointId (non-8012, removed from pending)", e)
+                } else {
+                    Log.w(TAG, "requestConnection to $endpointId failed with 8012 (bidirectional race) — " +
+                            "keeping in pendingConnections; remote onConnectionInitiated may still arrive", e)
+                }
             }
         }
 
         override fun onEndpointLost(endpointId: String) {
             Log.d(TAG, "Endpoint lost: $endpointId")
+            // Allow a future discovery event to retry this endpoint.
+            pendingConnections.remove(endpointId)
         }
     }
 
@@ -261,7 +319,7 @@ class RelayManager(
         try {
             val knownUuids = dataSource.getAllSosUuids()
             val manifest = RelayManifest(
-                deviceId = LOCAL_ENDPOINT_NAME,
+                deviceId = effectiveEndpointName(),
                 knownUuids = knownUuids,
                 timestamp = isoNow()
             )
@@ -330,10 +388,17 @@ class RelayManager(
                 val isNew = relayed.uuid !in knownUuids
 
                 dataSource.saveSosMessages(listOf(relayed))
-                Log.d(TAG, "SOSRequest ${relayed.uuid} forwarded to DataSource.saveSosMessages() (hopCount=${relayed.relayHopCount})")
 
+                // Day 7 diagnostic: log the forwarding decision explicitly so the
+                // physical stress test can distinguish "new SOS propagated onward"
+                // from "duplicate received, idempotent save, propagation skipped".
                 if (isNew) {
+                    Log.i(TAG, "SOSRequest ${relayed.uuid} forwarded to DataSource.saveSosMessages() " +
+                            "(hopCount=${relayed.relayHopCount}) — NEW, propagating to connected peers")
                     propagateSosToConnected(relayed, fromEndpointId = endpointId)
+                } else {
+                    Log.d(TAG, "SOSRequest ${relayed.uuid} is a DUPLICATE (already in store) — " +
+                            "idempotent save, propagation skipped")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error handling incoming SOSRequest from endpoint: $endpointId", e)
@@ -481,7 +546,7 @@ class RelayManager(
 
         try {
             connectionsClient.startAdvertising(
-                LOCAL_ENDPOINT_NAME,
+                effectiveEndpointName(),
                 SERVICE_ID,
                 connectionLifecycleCallback,
                 AdvertisingOptions.Builder().setStrategy(STRATEGY).build()

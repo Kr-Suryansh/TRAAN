@@ -107,6 +107,13 @@ Specifically:
 - **E:** Build the "situation brief" — a short paragraph Gemini regenerates periodically summarizing the overall picture. Test it end to end.
 - **F:** Build the incident detail view and the dispatch popup (where an authority picks a resource and confirms sending it).
 
+> **STATUS NOTE (current, A+B):** The 4–5 phone *physical* stress test is **deferred** — only 3 physical
+> Android devices are currently available. This is a testing-resource constraint, not a pass/fail result,
+> and is **not** claimed as passed/validated. A+B is proceeding with the strongest feasible **3-phone**
+> validation (2-phone regression → 3-phone A→B→C → dense/concurrent/recovery → diagnose/fix → document),
+> then continuing to Component C integration without waiting for the deferred 4–5 phone run.
+> See `PROJECT_HANDOFF.md` §16.
+
 ### Day 8 — Checkpoint: Integration Round 1 Complete
 - **Whole team:** First real end-to-end run. A real SOS, created on a real phone, should travel through the relay (or upload directly), reach the backend, get processed, and show up live on the dashboard.
 - Fix whatever breaks. Something will — that's the point of doing this today instead of assuming it'll work.

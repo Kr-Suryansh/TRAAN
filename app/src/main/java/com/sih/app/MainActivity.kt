@@ -26,10 +26,13 @@ import com.sih.relay.model.SOSStatus
 import com.sih.relay.model.SosLocation
 import com.sih.relay.service.RelayDataSourceProvider
 import com.sih.relay.service.RelayForegroundService
+import com.sih.relay.service.RelayTestConfig
+import com.sih.relay.service.RelayTestConfigProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -133,6 +136,11 @@ class MainActivity : Activity() {
         RelayDataSourceProvider.dataSource = relayDataSource
         Log.i(TAG, "Room-backed RelayDataSource wired: ${AppDatabase.DATABASE_NAME}")
 
+        // TEST-ONLY (Day 7 Phase D): read connection allow-list from intent extras
+        // and configure the relay seam before Start Relay is used. Null/unset keeps
+        // the exact production behavior (constant name, connect to every peer).
+        configureRelayTestConfig()
+
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#121212"))
@@ -214,11 +222,35 @@ class MainActivity : Activity() {
             }
         }
 
+        // TEMPORARY Day 7 test control: dumps the full local store (every SOS UUID,
+        // origin deviceId, hop count, status) to Logcat so a 4-5 phone stress test
+        // can be audited per device. Test-only instrumentation — no production logic.
+        val btnDumpStore = Button(this).apply {
+            text = "Dump Store"
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.parseColor("#00695C"))
+            textSize = 16f
+            layoutParams = buttonParams
+            setOnClickListener {
+                Log.i(TAG, "Dump Store button clicked")
+                testScope.launch {
+                    val all = relayDataSource.observeAllSos().first()
+                    Log.i(TAG, "Dump store: ${all.size} SOS record(s) in Room")
+                    all.forEach { sos ->
+                        Log.i(TAG, "  uuid=${sos.uuid} deviceId=${sos.deviceId} " +
+                                "hopCount=${sos.relayHopCount} status=${sos.status} " +
+                                "lastRelayedAt=${sos.lastRelayedAt}")
+                    }
+                }
+            }
+        }
+
         layout.addView(tvTitle)
         layout.addView(statusText)
         layout.addView(btnStart)
         layout.addView(btnStop)
         layout.addView(btnInject)
+        layout.addView(btnDumpStore)
 
         setContentView(layout)
         Log.i(TAG, "MainActivity onCreate completed successfully")
@@ -350,6 +382,42 @@ class MainActivity : Activity() {
         lastRelayedAt = isoNow(),
         status = SOSStatus.PENDING_LOCAL
     )
+
+    /**
+     * TEST-ONLY (Day 7 Phase D): reads the connection allow-list from intent extras
+     * and sets it on [RelayTestConfigProvider] before Start Relay is used.
+     *
+     * Extras:
+     *   --es relay_test_peer <name>                  — this phone's advertised name
+     *   --es relay_test_allowed <a,b,c>              — comma-separated allowed peer names
+     *
+     * When neither extra is present the provider stays null and the relay behaves
+     * exactly as before (constant "SIH-Relay-Node" name, connect to all peers).
+     * This is debug/test scaffolding only — no production logic is changed.
+     */
+    private fun configureRelayTestConfig() {
+        val peer = intent.getStringExtra("relay_test_peer")?.trim().orEmpty()
+        val allowed = intent.getStringExtra("relay_test_allowed")?.trim().orEmpty()
+
+        if (peer.isEmpty() && allowed.isEmpty()) {
+            RelayTestConfigProvider.config = null
+            Log.i(TAG, "TEST-ONLY relay config: none provided — production behavior (connect to all peers)")
+            return
+        }
+
+        val allowedPeers = if (allowed.isEmpty()) {
+            emptySet()
+        } else {
+            allowed.split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        }
+        val peerName = peer.ifEmpty { "SIH-Relay-Node" }
+
+        RelayTestConfigProvider.config = RelayTestConfig(
+            localPeerName = peerName,
+            allowedPeerNames = allowedPeers
+        )
+        Log.i(TAG, "TEST-ONLY relay config ACTIVE: localPeerName=$peerName, allowedPeerNames=$allowedPeers")
+    }
 
     private fun isoNow(): String {
         val sdf = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)

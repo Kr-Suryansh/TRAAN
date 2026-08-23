@@ -42,16 +42,19 @@ backend + dashboard + AI are NOT in this repo.
 
 ## 2. CURRENT DEVELOPMENT STATE
 
-**Development day/phase:** Day 5 is the last **committed** day. Day 6 implementation work and its
-physical validation exist in the **working tree but are UNCOMMITTED** (see Discrepancies §15).
+**Development day/phase:** Day 6 is committed (`6678771`). **Day 7 is COMPLETE (uncommitted).**
 
-> [!IMPORTANT] Repo state on disk ≠ repo state at HEAD
-> - HEAD commit `e8f319c` = "Completed upto Day 5".
-> - The **working tree** additionally contains complete, build-verified, **physically validated Day 6** work:
->   Room persistence in `:data` + `RoomRelayDataSource`, the `SosRequestMapper`, real device identity,
->   `RelayPermissionRequirements`, the permission preflight UX, and relay startup hardening.
-> - Day 6 changes are NOT committed but ARE now described in `Logs.md`/`walkthrough.md`/`Agent.md`
->   (updated this session with the actual physical validation evidence).
+> [!IMPORTANT] Current repo state
+> - HEAD commit `6678771` = "Completed upto Day 6: Persistence, permissions, and relay hardening" (committed 2026-08-16).
+> - The **working tree** contains Day 7 **diagnostic instrumentation + production-quality 8012 fix** (uncommitted):
+>   a forwarding-decision log in `RelayManager.handleIncomingSos` (NEW vs DUPLICATE), a test-only
+>   "Dump Store" button in `MainActivity`, a **TEST-ONLY connection allow-list** seam
+>   (`RelayTestConfig`/`RelayTestConfigProvider` in `:relay`, set from intent extras in `:app`),
+>   and a production-quality 8012-aware failure handler in `RelayManager.onEndpointFound` that
+>   prevents the bidirectional P2P_CLUSTER race from discarding valid connection attempts.
+> - **Day 7 Phases A through G are COMPLETE** — see §8/§16. All 3-phone validation passed.
+> - **Physical 4–5 phone stress testing is DEFERRED** (see §8 and §16): only 3 physical Android phones
+>   are currently available. This is a testing-resource constraint, NOT a passed/validated result.
 
 ### What is actually completed (verified against code + tests)
 - Day 1–5 relay engine fully implemented and physically validated (see §4, §8).
@@ -60,12 +63,18 @@ physical validation exist in the **working tree but are UNCOMMITTED** (see Discr
 - Relay startup hardening + permission helper (Day 6 hardening portion).
 - Day 6 permission preflight UX in `:app` ("Start Relay" requests missing runtime permissions and prompts to enable Bluetooth before starting the service).
 - **Day 6 physical validation PASSED** — 3-device A → B → C with a non-empty SOS written through the Room-backed `saveSosMessages()` path on B and C, and that SOS **survived a process restart on C** (Room persisted 2 UUIDs after a fresh injection post-restart). See §8 and `Logs.md` Day 6.
+- **Day 7 COMPLETE** — diagnostic instrumentation (forwarding-decision log, Dump Store button, TEST-ONLY allow-list seam) + production-quality 8012-aware failure handler. Phases A–G all completed. Strongest feasible 3-phone validation performed and documented. See §8/§16.
 
 ### What is currently working (verified this session)
 - Full Gradle build `:app:assembleDebug` + `:data:testDebugUnitTest` + `:relay:testDebugUnitTest`:
   **BUILD SUCCESSFUL**. **75 JVM tests pass, 0 failures** (64 relay + 11 data). Verified, not assumed.
 
 ### What is incomplete / planned / deferred
+- **4–5 physical-phone stress test — DEFERRED (NOT performed).** Only 3 physical Android devices are
+  available. Must NOT be described as "passed"/"validated"/"complete". See §8 and §16.
+- **Component C integration** — next major task after Day 7 commit: Room-backed persistence compatibility,
+  `RelayRepository` boundary, `GatewaySyncWorker`, `DevicePreferences`, Hilt/module wiring, app/UI
+  integration, end-to-end SOS flow (see §9/§13).
 - Real SOS creation + Compose UI (C's job).
 - `:network` module, backend uploads, gateway mode, device registration (C/D).
 - TTL cleanup, low-battery throttle, simulation/fallback demo mode (later roadmap days).
@@ -136,13 +145,14 @@ Concise summary from `Logs.md`/`walkthrough.md` + code. For full detail see thos
 - **Day 5** — `DutyCycler` (~10s active / ~40s sleep), `RelayManager.startScanWindow/stopScanWindow`,
   `RelayForegroundService` (START_STICKY, `connectedDevice` type, LocalBinder), `RelayNotification`,
   `RelayDataSourceProvider` static seam. **Physically validated A→B→C** under FGS + duty cycle. 64 relay tests.
-- **Day 6 (working tree, uncommitted)** — Room persistence in `:data` (ported from C): entities, DAOs,
+- **Day 6 (committed 2026-08-16, HEAD `6678771`)** — Room persistence in `:data` (ported from C): entities, DAOs,
   `AppDatabase`, `RoomConverters`, model enums; `DevicePreferences` (de-Hilted identity); `SosRequestMapper`;
   `RoomRelayDataSource`; `RelayPermissionRequirements`; startup hardening of `RelayManager` + FGS;
   permission preflight UX in `:app` (runtime permission requests + Bluetooth enable prompt before start).
   `:app` now uses Room + real device identity. 11 new data tests. Build + 75 tests verified.
-  **Physically validated** this session: A→B→C with a non-empty SOS (`e9407a8a-...`) persisted to Room on
+  **Physically validated**: A→B→C with a non-empty SOS (`e9407a8a-...`) persisted to Room on
   B and C and surviving a process restart on C (see `Logs.md` Day 6, §8).
+- **Day 7 (in progress)** — see §16. Diagnostic instrumentation only so far; 4–5 phone stress test deferred.
 
 ---
 
@@ -178,7 +188,8 @@ Concise summary from `Logs.md`/`walkthrough.md` + code. For full detail see thos
 
 **`:app`**
 - `app/.../MainActivity.kt` — **TEMPORARY** test scaffold (§6): builds the Room store, binds the service,
-  Start/Stop/Inject buttons. Will be replaced by C's Compose UI.
+  Start/Stop/Inject buttons. Will be replaced by C's Compose UI. **Day 7:** also has a test-only "Dump Store"
+  button (logs every stored UUID + deviceId + hopCount + status) for 3-phone diagnostics.
 
 **Docs:** `day1-contracts-and-repo-setup.md` (master contract), `Agent.md`, `Logs.md`, `walkthrough.md`,
 `ApiEndpoints.md`, `Component1_Overview.md`, `15-day-roadmap.md`. Note: `Logs.md`/`walkthrough.md`/`Agent.md`
@@ -283,9 +294,30 @@ No hardware identifiers (serials/MAC/IMEI/Android IDs) are recorded here.
 the logs as unreliable; the roles are not. Device roles for the relay tests: A = source phone, B = middle relay,
 C = end node.
 
+### Validation-status tracking (4–5 phone stress test)
+
+| Item | Status |
+|---|---|
+| 2-phone relay (Day 2/3) | ✅ PASSED (physically validated) |
+| 3-phone A → B → C (Day 4/5/6) | ✅ PASSED (physically validated) |
+| 3-phone Room persistence + restart (Day 6) | ✅ PASSED (physically validated) |
+| **Day 7 Phase A** (baseline tests/build) | ✅ PASSED (75/75 JVM tests, `:app:assembleDebug` BUILD SUCCESSFUL) |
+| **Day 7 Phase B** (2-phone regression with diagnostics) | ✅ PASSED — Phone A (source) and Phone B (receiver); injected `83306893-6e6e-4065-9e9f-189a75d19616`; both started/advertised/discovered/connected/manifest-exchanged; A stored + sent; B received exact UUID at `hopCount=1`/`IN_RELAY`, classified **NEW**, persisted (Dump Store confirmed; B held 2 records — 1 older pre-existing + the new UUID, not a failure). See §16 and `Logs.md`. |
+| **Day 7 Phase C** (3-phone A → B → C) | ✅ PASSED — deterministic chain forced with the TEST-ONLY allow-list filter (A allowed B; B allowed A,C; C allowed B). A originated SOS `62c667f9-9204-46dd-98b6-f1d32297552d`; B received from A at `hopCount=1`/`IN_RELAY`, classified **NEW**, persisted, propagated to C; C received same UUID from B at `hopCount=2`/`IN_RELAY`, classified **NEW**, persisted. Dump Store on C confirmed the UUID with `hopCount=2`/`IN_RELAY` (C held 2 records — 1 pre-existing + the new UUID, not a failure). Transient `STATUS_ENDPOINT_IO_ERROR` (8012) and `STATUS_ALREADY_CONNECTED_TO_ENDPOINT` occurred during connection races but self-recovered; end-to-end test succeeded. See §16 and `Logs.md`. |
+| **Day 7 Phase D/F** (dense/concurrent/recovery/restart) | ✅ PASSED — D1 multiple injections (3 UUIDs from A, all propagated A→B→C), D2 echo guard (manifest exchanges showed 0 missing SOS), D3 disconnect/reconnect (**PARTIALLY VALIDATED** — automatic self-healing observed; no clean controlled prolonged disconnect), D4 relay stop/start (C stopped/started, reconnection, new UUID `83904f98` propagated correctly), D5 process kill persistence (force-stop all 3, Room survived, reconnection succeeded), D6 hop count audit (all 4 Day 7 UUIDs confirmed A=0/B=1/C=2), D7 bidirectional injection (B and C injected, propagation confirmed). D8 sleep-window injection **NOT TESTED** (duty-cycle behavior already validated in Day 5; specific edge case not required for Day 7 closure). See §16 and `Logs.md`. |
+| **4–5 physical-phone stress test** (duplicate/dropped/stuck detection, dense mesh) | ⏳ **DEFERRED — NOT performed.** Only 3 physical Android devices currently available. |
+| JVM automated tests | ✅ 75/75 passing (64 relay + 11 data) |
+| Gateway upload / backend | ❌ Not tested (backend not integrated yet) |
+
+> **The planned 4–5 physical-phone stress test has NOT been completed and must NOT be represented
+> anywhere as "passed", "validated", or "complete".** It is deferred because only 3 physical Android
+> devices are available for testing. This is a testing-resource constraint, not a software failure.
+> A JVM simulation is NOT equivalent to the missing real-device test and is not claimed to be.
+> The test remains a future validation task.
+
 **Not yet physically validated:** the START_STICKY-only redelivery path (service recreated after process death
 without a fresh `:app` process uses the in-memory fallback until Hilt re-injection), gateway upload to a real
-backend, internet delivery.
+backend, internet delivery, and any behavior requiring ≥4 physical devices.
 
 ---
 
@@ -293,6 +325,9 @@ backend, internet delivery.
 
 Work intentionally postponed. Especially the C-component integration items:
 
+- **4–5 physical-phone stress test — DEFERRED (validation, not a code item).** Planned roadmap Day 7 A+B
+  scope. NOT performed because only 3 physical devices are available. Remains a future validation task;
+  project progress does NOT pause for it (§16). Must not be reported as passed/complete.
 - **Full Component C integration** (the big one):
   - Merge/reconcile this repo's `:data` Room copy with Component C's repo (schema is identical by design).
   - Replace `RelayDataSourceProvider` with C's Hilt DI; resolve the START_STICKY store divergence.
@@ -312,9 +347,12 @@ Work intentionally postponed. Especially the C-component integration items:
 
 Only issues supported by the repo or documented testing.
 
-- **Uncommitted Day 6 working tree** (top risk for continuity): HEAD is Day 5; Day 6 code exists only in the
-  working tree. Docs (`Logs.md`/`walkthrough.md`/`Agent.md`) now describe Day 6, but a fresh clone would NOT
-  contain the Room layer. (This is a process issue, not a code bug.)
+- **4–5 physical-phone stress test not yet performed** (top validation gap): only 3 physical devices
+  available; the roadmap Day 7 scale test is deferred, not passed. See §8, §16.
+- **Uncommitted Day 7 diagnostic instrumentation in the working tree** (continuity): HEAD is Day 6
+  (`6678771`); the working tree adds only Day 7 test-only diagnostics (forwarding-decision log in
+  `RelayManager`, "Dump Store" button in `MainActivity`). These are uncommitted and should be committed
+  or reverted deliberately as part of Day 7.
 - **START_STICKY store divergence** after process death (in-memory fallback vs `:app` store) — documented in
   `RelayForegroundService`; resolved only by DI/Room re-injection.
 - **Lint skipped** due to `ConcurrentHashMap.newKeySet()` `NewApi` (API 24 vs minSdk 23) in `RelayManager.kt`.
@@ -377,17 +415,24 @@ Recorded decisions and the reasons given. Do not reinterpret or redesign them.
 
 ## 13. NEXT DEVELOPMENT STEP
 
-Ground truth of the repo: the working tree contains verified, uncommitted Day 6 work (implementation,
-75 automated tests, and physical A→B→C Room persistence validation); HEAD is Day 5.
+Ground truth of the repo: Day 6 is committed (`6678771`). The working tree contains uncommitted Day 7
+work: diagnostic instrumentation (forwarding-decision log, Dump Store button, TEST-ONLY allow-list seam),
+a production-quality 8012-aware failure handler, and updated documentation. 75 automated tests pass.
+Day 7 3-phone validation is **COMPLETE and documented** — all Phase A–G work done.
 
-Exact next logical tasks, in order:
-1. **Commit the Day 6 working tree** (Room layer, `RoomRelayDataSource`, mapper, identity, permission helper,
-   permission preflight UX, hardening, tests) — docs (`Logs.md`/`walkthrough.md`/`Agent.md`) are now updated
-   to match.
-2. **Proceed to roadmap Day 7 for A+B: stress-test with 4–5 phones** (duplicate/dropped/stuck message
-   detection) once the Day 6 commit is in place.
-3. **Do NOT start full C integration** (Hilt swap, gateway workers, real app shell) until the Day 6 commit is
-   done — those are the deferred integration tasks of §9.
+**Next logical task: Component C integration.**
+
+Exact next steps, in order:
+1. **Commit Day 7 work** — all Day 7 changes (code + documentation) committed as a coherent snapshot.
+2. **Begin Component C integration** (see §9/§16.5):
+   - Room-backed persistence compatibility (schema already ported, identical by design)
+   - `RelayRepository` boundary / `RelayDataSource` seam
+   - `GatewaySyncWorker`, `DevicePreferences`, network DTOs/contracts
+   - Hilt/module wiring (replace `RelayDataSourceProvider` seam)
+   - App/UI integration (replace `MainActivity` scaffold with C's Compose shell)
+   - End-to-end SOS flow
+3. **Do NOT interpret the deferred 4–5 phone test as a blocker** — it remains a future validation item
+   pending availability of additional physical devices (see §8/§16).
 
 ---
 
@@ -407,9 +452,9 @@ Exact next logical tasks, in order:
 
 ## 15. DISCREPANCIES FOUND BETWEEN DOCUMENTATION AND REPO STATE
 
-1. **Day 6 work is uncommitted but now documented.** HEAD (`e8f319c`) = Day 5; the working tree contains the
-   full Day 6 implementation, its passing tests, and its physical validation, and `Logs.md`/`walkthrough.md`/
-   `Agent.md` now describe Day 6 (updated this session). The changes are still not committed.
+1. **Day 6 is committed; earlier docs said uncommitted (now resolved).** Previous copies of this file stated
+   HEAD = Day 5 (`e8f319c`) with Day 6 in the working tree. Day 6 is now committed at `6678771`
+   ("Completed upto Day 6…"). The working tree now holds only uncommitted Day 7 diagnostic instrumentation.
 2. **`:data`/`:network` are not stubs anymore conceptually** — the docs call `:data` a "stub", but the working
    tree now has a complete Room layer in `:data`. `:network` is still a stub.
 3. **Test count in docs was stale; now resolved.** `Agent.md`/`walkthrough.md` previously cited only 56 (Day 4)
@@ -429,3 +474,133 @@ Exact next logical tasks, in order:
    lives in Component C's repo (a handoff doc), not here. This repo's `relay` manifest declares all needed
    permissions statically; the runtime preflight UX is implemented in `:app` (this repo) and was physically
    exercised as part of the Day 6 validation.
+
+---
+
+## 16. DAY 7 — REVISED PLAN AND 3-PHONE LIMITATION  ⚠️ READ BEFORE CONTINUING
+
+> This section is the current authoritative Day 7 status. The original roadmap Day 7 intent
+> ("stress-test with 4–5 phones") is preserved in `15-day-roadmap.md` and in §4/§13, but the
+> physical 4–5 phone validation is **deferred** because only 3 physical Android devices are available.
+
+### 16.1 Testing limitation (must be stated accurately)
+
+- The planned **4–5 physical-phone stress test has NOT been completed**.
+- It is **deferred** because only **3 physical Android devices** are currently available for testing.
+- This must **NOT** be represented anywhere as "passed", "validated", or "complete".
+- The limitation is a **testing-resource constraint, not a software failure**.
+- **A JVM simulation is NOT equivalent** to the missing real-device test; we do not claim it is.
+- The test remains a **future validation task** to be performed when sufficient devices are available.
+
+**Testing-status vocabulary to use going forward:**
+- GOOD: "Deferred" / "Not yet physically validated" / "Pending availability of additional devices" /
+  "3-device validation currently available".
+- BAD: "Passed" / "Complete" / "Validated at scale" / "5-device stress tested".
+
+### 16.2 What we CAN validate now (realistic Day 7 scope with 3 phones)
+
+The following validate **real Android/Nearby/OS behavior** (they do NOT prove behavior at 4–5 physical nodes):
+- 2-phone regression
+- 3-phone A → B → C relay
+- 3-phone dense/mesh connectivity where practical
+- multiple SOS injections
+- duplicate UUID behavior
+- hop-count correctness
+- persistence/store verification (via the "Dump Store" button)
+- disconnect/reconnect
+- relay stop/start
+- app process restart
+- permission/preflight behavior
+- foreground-service behavior
+- duty-cycle behavior
+- repeated physical runs to expose intermittent problems
+
+### 16.3 Automated / JVM coverage (optional, future)
+
+- Expanding automated tests for **multi-node logic** is a possible future approach (e.g., a logical
+  multi-peer harness / fake transport in JVM tests) to increase concurrency/logic coverage.
+- This is **NOT committed** and **NOT implemented**. It is recorded as an optional/future technique.
+- It is a complement to — **never a substitute for** — the deferred real-device 4–5 phone test.
+
+### 16.4 Day 7 revised plan
+
+- **PHASE A** — baseline automated tests/build. **PASSED** (75/75 JVM tests; `:app:assembleDebug` BUILD SUCCESSFUL).
+- **PHASE B** — 2-phone regression. **PASSED** (2026-08-18): Phone A (source) ↔ Phone B
+  (receiver). Both started relay, advertised/discovered, connected, and exchanged
+  RelayManifest. A injected `83306893-6e6e-4065-9e9f-189a75d19616`, stored it, and sent it to its 1 connected
+  endpoint. B received the exact UUID at `hopCount=1`/`status=IN_RELAY`, classified it **NEW**, and propagated
+  it per the relay logic; "Dump Store" on B confirmed the UUID persisted locally (B showed 2 records total —
+  1 older pre-existing SOS + the new UUID; not a failure). A transient Nearby `ApiException 8012 /
+  STATUS_ENDPOINT_IO_ERROR` on an initial connection request on A was recorded as a **non-blocking
+  observation** (devices connected and the full manifest + SOS transfer succeeded afterward).
+- **PHASE C** — 3-phone A → B → C testing. **PASSED** (2026-08-19): topology forced with the TEST-ONLY
+  allow-list filter (A allowed B; B allowed A,C; C allowed B). A originated SOS
+  `62c667f9-9204-46dd-98b6-f1d32297552d`; B received it from A at `hopCount=1`/`IN_RELAY`, classified
+  **NEW**, persisted it, and propagated it to C; C received the same UUID from B at `hopCount=2`/`IN_RELAY`,
+  classified **NEW**, and persisted it. "Dump Store" on C confirmed `uuid=62c667f9-...`, `hopCount=2`,
+  `status=IN_RELAY` (C showed 2 records total — 1 pre-existing + the new UUID; not a failure). Transient
+  Nearby errors `STATUS_ENDPOINT_IO_ERROR` (8012) and `STATUS_ALREADY_CONNECTED_TO_ENDPOINT` occurred during
+  connection races but self-recovered; the end-to-end A→B→C test completed successfully.
+- **PHASE D** — 3-phone dense/concurrent/recovery testing. **PASSED** (see detailed results below).
+- **PHASE E** — diagnose and fix confirmed Day 7 issues. **COMPLETE** — the 8012-aware failure handler is the only code change; no other bugs found.
+- **PHASE F** — verify persistence, duplicates, hop counts, reconnect/restart. **PASSED** (see detailed results below).
+- **PHASE G** — document actual results. **COMPLETE** (this section and `Logs.md`/`walkthrough.md`/`Agent.md` updated).
+
+#### Phase D/F detailed results
+
+- **D1 — Multiple SOS injections: PASSED.** Node A injected three distinct UUIDs rapidly:
+  `c581b6c8-94d1-498c-86f8-5b7b392d04e0`, `24900c85-db5c-4d22-b86b-933032bf1447`,
+  `840f9d92-27cf-4cf0-8303-8b82408fcf41`. All three propagated through A→B→C. A stored them at
+  `hopCount=0`/`PENDING_LOCAL`. B received them at `hopCount=1`/`IN_RELAY`. C received all three as
+  **NEW** at `hopCount=2`/`IN_RELAY`.
+- **D2 — Duplicate/echo guard: PASSED.** Manifest exchanges repeatedly showed
+  `UUID diff for endpoint <id>: peer has N UUID(s), 0 SOSRequest(s) to send` and
+  `No missing SOSRequests to send to endpoint <id> — peer is up to date` after peers already had the
+  same UUID sets, including after reconnection/restart scenarios. This physically validates the
+  manifest-based duplicate/echo prevention behavior.
+- **D3 — Disconnect/reconnect: PARTIALLY VALIDATED.** A transient disconnect/reconnection occurred and
+  the mesh automatically reconnected. The Nearby/Bluetooth connection re-established before a clean
+  manual separation could be fully controlled. The automatic self-healing IS valid evidence of mesh
+  recovery, but no clean deliberately controlled prolonged physical disconnect was achieved. This is a
+  testing-procedure limitation, not a software failure.
+- **D4 — Relay stop/start recovery: PASSED.** Phone C: Stop Relay pressed → relay started again →
+  connections re-established → manifest exchanges completed → existing UUID sets showed 0 missing
+  SOSRequests. Node A then injected a new SOS `83904f98-976c-4a1e-904f-453559953e0d` which propagated
+  correctly: A=hopCount 0, B=hopCount 1, C=hopCount 2.
+- **D5 — App process kill persistence: PASSED.** Before force-stopping, all three phones had 10 SOS
+  records in Room. App processes force-stopped and relaunched. Each device rewired the Room-backed
+  `RelayDataSource` using `sih_local.db`. Relay connections re-established. Manifest exchanges showed
+  10 known UUIDs and 0 missing SOSRequests. Room data survived process force-stop/relaunch.
+- **D6 — Complete hop count audit: PASSED.** Explicit Dump Store evidence from all three phones confirmed
+  all four Day 7 UUIDs: `c581b6c8` (A=0, B=1, C=2), `24900c85` (A=0, B=1, C=2),
+  `840f9d92` (A=0, B=1, C=2), `83904f98` (A=0, B=1, C=2).
+- **D7 — Bidirectional injection: PASSED.** After the three-injection test, SOS records were injected
+  from B and C as well. Propagation through the mesh was confirmed with expected hop behavior.
+- **D8 — Deliberate sleep-window injection: NOT TESTED.** Duty cycling itself was already exercised and
+  validated during Day 5 (A→B→C under FGS + duty cycle). The specific edge case of intentionally
+  injecting immediately after "Closing scan window" was not performed. This is not required for Day 7
+  closure per §16.2/§16.4 — the duty-cycle behavior was already physically validated.
+- **8012-aware connection race handling: PASSED.** `STATUS_ENDPOINT_IO_ERROR` (8012) occurred during
+  bidirectional connection races, but the connection subsequently completed instead of being incorrectly
+  discarded. The production-quality fix in `RelayManager.onEndpointFound` works correctly.
+
+> **4–5 physical-phone stress testing remains deferred and will be performed later when sufficient
+> physical devices are available.**
+
+### 16.5 Project continuation (do not treat the deferred test as a blocker)
+
+> **Project development does not pause for the deferred 4–5 phone test.** Day 7 is **COMPLETE**.
+> The strongest feasible 3-phone validation has been performed and documented.
+> Development now proceeds to the planned **Component C integration** and subsequent end-to-end work.
+
+- Do **not** interpret the missing 5-phone test as a blocker in future sessions.
+- Component C integration proceeds after the strongest feasible 3-phone A+B validation:
+  - Room-backed persistence compatibility (schema already ported, identical by design)
+  - `RelayRepository` boundary / `RelayDataSource` seam
+  - `GatewaySyncWorker`, `DevicePreferences`, network DTOs/contracts
+  - Hilt/module wiring (replace `RelayDataSourceProvider` seam)
+  - app/UI integration (replace `MainActivity` scaffold with C's Compose shell)
+  - end-to-end SOS flow
+- Preserve existing architecture boundaries and handoff contracts; do NOT silently resolve previously
+  identified integration decisions (see §9 and Component C handoff docs).
+- Nothing from this section has been implemented yet — it is the current plan and status.

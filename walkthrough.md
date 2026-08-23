@@ -443,3 +443,118 @@ SOS persisted in Room on the receiving node across a process restart.
 **Day 6 result: PASS (Complete).** Room persistence, permission preflight, and relay hardening are
 verified: 75 automated tests + 3-device A → B → C relay with a non-empty SOS persisted to Room and
 surviving a process restart on C.
+
+## Day 7 — Revised Scope: 3-Phone Validation (4–5 Phone Test Deferred)
+
+**Date:** 2026-08-17
+**Scope:** A + B (`:relay`, `:app`) — Day 7 in progress.
+
+### Status of the roadmap 4–5 phone stress test
+
+The planned **4–5 physical-phone stress test has NOT been completed**. It is **deferred** because only
+**3 physical Android devices** are currently available for testing. This is a **testing-resource
+constraint, not a software failure**, and must NOT be described as "passed"/"validated"/"complete".
+A JVM simulation is NOT a substitute for the missing real-device test. The test remains a future
+validation task. See `PROJECT_HANDOFF.md` §8/§16.
+
+### Diagnostic instrumentation (test-only, no production/protocol change)
+
+- `relay/…/RelayManager.kt` — `handleIncomingSos` now logs the forwarding decision explicitly:
+  `NEW … propagating to connected peers` vs `DUPLICATE (already in store) — idempotent save, propagation skipped`.
+- `app/…/MainActivity.kt` — test-only **"Dump Store"** button logs every stored SOS
+  (uuid, deviceId, hopCount, status, lastRelayedAt) from Room for per-device audit.
+
+### Revised Day 7 plan (3 phones)
+
+- **PHASE A** baseline automated tests/build
+- **PHASE B** 2-phone regression
+- **PHASE C** 3-phone A → B → C testing
+- **PHASE D** 3-phone dense/concurrent/recovery testing
+- **PHASE E** diagnose and fix confirmed Day 7 issues
+- **PHASE F** verify persistence, duplicates, hop counts, reconnect/restart
+- **PHASE G** document actual results
+
+### Phase B — 2-phone regression (PASSED)
+
+- **Devices:** Phone A (SOS source) and Phone B (receiving relay).
+- **Injected UUID:** `83306893-6e6e-4065-9e9f-189a75d19616`.
+- Both phones **started relay successfully, advertised/discovered, connected, and exchanged RelayManifest**.
+- Phone A **stored** the SOS locally and **sent** it to its 1 connected endpoint.
+- Phone B **received the exact UUID** with `hopCount=1`, `status=IN_RELAY`; classified it as **NEW** and
+  propagated onward per the relay logic (the new NEW-forwarding diagnostic log confirmed the decision).
+- **Dump Store on Phone B confirmed the newly injected UUID was persisted locally**
+  (`uuid`, `deviceId`, `hopCount=1`, `status=IN_RELAY`). Phone B showed 2 total records because one older
+  SOS from previous testing already existed — **not a Phase B failure**.
+- **Transient observation (non-blocking, NOT a confirmed bug):** a Nearby `ApiException 8012 /
+  STATUS_ENDPOINT_IO_ERROR` occurred during an initial connection request on Phone A, then the devices
+  connected successfully and the complete manifest + SOS transfer succeeded.
+
+**Phase B result: PASS.**
+
+### Phase C — Deterministic 3-phone A → B → C (PASSED)
+
+- **Topology forced with the TEST-ONLY allow-list filter** (`RelayTestConfig` / `RelayTestConfigProvider`,
+  intent extras `relay_test_peer`/`relay_test_allowed`): A allowed B; B allowed A and C; C allowed B. C
+  ignored direct discovery from A, so the relay path was deterministically A → B → C.
+- **SOS UUID:** `62c667f9-9204-46dd-98b6-f1d32297552d`, originated/sent from A.
+- **B** received it from A at `hopCount=1`, `status=IN_RELAY`, classified **NEW**, persisted it via
+  `saveSosMessages()`, and propagated it to C.
+- **C** received the same UUID from B at `hopCount=2`, `status=IN_RELAY`, classified **NEW**, and persisted it.
+- **Dump Store on C confirmed** `uuid=62c667f9-...`, `hopCount=2`, `status=IN_RELAY` (C showed 2 records
+  total — 1 pre-existing + the new UUID; **not a failure**).
+- **Transient Nearby errors** (`STATUS_ENDPOINT_IO_ERROR` / 8012, `STATUS_ALREADY_CONNECTED_TO_ENDPOINT`)
+  occurred during connection races but self-recovered; the end-to-end A → B → C test succeeded.
+
+**Phase C result: PASS.**
+
+### Phase D — Dense/concurrent/recovery testing (PASSED)
+
+- **D1 — Multiple SOS injections (PASSED):** Node A injected three distinct UUIDs rapidly:
+  `c581b6c8-94d1-498c-86f8-5b7b392d04e0`, `24900c85-db5c-4d22-b86b-933032bf1447`,
+  `840f9d92-27cf-4cf0-8303-8b82408fcf41`. All three propagated through A→B→C. A stored them at
+  `hopCount=0`/`PENDING_LOCAL`. B received them at `hopCount=1`/`IN_RELAY`. C received all three as
+  **NEW** at `hopCount=2`/`IN_RELAY`.
+
+- **D2 — Duplicate/echo guard (PASSED):** Manifest exchanges repeatedly showed
+  `UUID diff for endpoint <id>: peer has N UUID(s), 0 SOSRequest(s) to send` and
+  `No missing SOSRequests to send to endpoint <id> — peer is up to date` after peers already had the
+  same UUID sets, including after reconnection/restart scenarios.
+
+- **D3 — Disconnect/reconnect (PARTIALLY VALIDATED):** A transient disconnect/reconnection occurred and
+  the mesh automatically reconnected. The Nearby/Bluetooth connection re-established before a clean
+  manual separation could be fully controlled. The automatic self-healing IS valid evidence of mesh
+  recovery, but no clean deliberately controlled prolonged physical disconnect was achieved.
+
+- **D4 — Relay stop/start recovery (PASSED):** Phone C: Stop Relay pressed → relay started again →
+  connections re-established → manifest exchanges completed → existing UUID sets showed 0 missing
+  SOSRequests. Node A then injected a new SOS `83904f98-976c-4a1e-904f-453559953e0d` which propagated
+  correctly: A=hopCount 0, B=hopCount 1, C=hopCount 2.
+
+- **D5 — App process kill persistence (PASSED):** Before force-stopping, all three phones had 10 SOS
+  records in Room. App processes force-stopped and relaunched. Each device rewired the Room-backed
+  `RelayDataSource` using `sih_local.db`. Relay connections re-established. Manifest exchanges showed
+  10 known UUIDs and 0 missing SOSRequests. Room data survived process force-stop/relaunch.
+
+- **D6 — Complete hop count audit (PASSED):** Explicit Dump Store evidence from all three phones confirmed
+  all four Day 7 UUIDs: `c581b6c8` (A=0, B=1, C=2), `24900c85` (A=0, B=1, C=2),
+  `840f9d92` (A=0, B=1, C=2), `83904f98` (A=0, B=1, C=2).
+
+- **D7 — Bidirectional injection (PASSED):** After the three-injection test, SOS records were injected
+  from B and C as well. Propagation through the mesh was confirmed with expected hop behavior.
+
+- **D8 — Deliberate sleep-window injection (NOT TESTED):** Duty cycling itself was already exercised and
+  validated during Day 5. The specific edge case of intentionally injecting immediately after
+  "Closing scan window" was not performed. Not required for Day 7 closure.
+
+- **8012-aware connection race handling (PASSED):** `STATUS_ENDPOINT_IO_ERROR` (8012) occurred during
+  bidirectional connection races, but the connection subsequently completed instead of being incorrectly
+  discarded. The production-quality fix works correctly.
+
+**Phase D result: PASS.** (D3 partially validated; D8 not tested — see notes above.)
+
+**Day 7 result: COMPLETE.** All Phase A–G work done. Strongest feasible 3-phone validation performed
+and documented. Proceeding to Component C integration.
+
+Project development does NOT pause for the deferred 4–5 phone test; after the strongest feasible 3-phone
+validation, work continues to Component C integration. Nothing here is implemented beyond the diagnostics
+above; this documents the current plan and status.
