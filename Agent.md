@@ -135,9 +135,9 @@ exact Pixel 8 logcat sequence.
 - **Day 7 is COMPLETE.** Proceeding to Component C integration. See `PROJECT_HANDOFF.md` §16.
 
 ### Not yet implemented (scheduled per roadmap)
-- **Integration Stages 0a–5 COMPLETE (uncommitted)** — build files, network module, data module additions,
-  relay seam, Compose app shell all in working tree. Pending manual commit through GitHub Desktop.
-- **Integration Stage 6** — end-to-end wiring + physical device testing with the integrated app shell.
+- **Integration Stages 0a–5 COMMITTED and PUBLISHED** — commit `a1ec30d` on `integration/ab-component-c`.
+- **Integration Stage 6A** — single-device physical verification: PASS (onboarding, SOS, location, persistence, status).
+- **Integration Stage 6B** — relay integration wiring + multi-device + backend testing: NOT YET COMPLETED.
 - TTL cleanup (`last_relayed_at` expiry, 48-72h) → later
 - Low-battery throttle mode → Day 10
 - Simulation/fallback demo mode → Day 12

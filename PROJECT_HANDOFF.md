@@ -42,15 +42,14 @@ backend + dashboard + AI are NOT in this repo.
 
 ## 2. CURRENT DEVELOPMENT STATE
 
-**Development day/phase:** Day 7 committed (`320bfbd`). **Integration Stages 0a–5 COMPLETE (uncommitted).**
+**Development day/phase:** Day 7 committed (`320bfbd`). Integration Stages 0a–5 committed (`a1ec30d`). Stage 6A verified.
 
 > [!IMPORTANT] Current repo state
-> - HEAD commit `320bfbd` = "Completed Day 7: Three device relay stress validation, recovery testing,
->   persistence verification, and connection hardening" (committed on `mesh-relay`, mirrored to
->   `integration/ab-component-c`).
-> - Branch: `integration/ab-component-c` (HEAD `320bfbd`, identical to `mesh-relay`).
-> - The **working tree** contains **A+B ↔ Component C integration work** (Stages 0a–5, uncommitted):
->   13 modified files + 54 new files across 21 untracked directories. See §17 for full details.
+> - HEAD commit `a1ec30d` = "Integrate Components A+B+C through Stage 5" on
+>   branch `integration/ab-component-c`. Parent is `320bfbd` (Day 7 commit on `mesh-relay`).
+> - Stages 0a–5 are committed in `a1ec30d`. Stage 6A physical verification passed.
+> - The **working tree** contains **Stage 6B-1 code changes** (4 modified files).
+>   See §17 for full details.
 > - **75 JVM tests pass** (64 relay + 11 data) — same baseline as Day 7; new integration test files
 >   (`DtoSerializationTest`, `EnumContractTest`, etc.) are in the working tree but not yet compiled
 >   into the test suite pending commit.
@@ -76,9 +75,10 @@ backend + dashboard + AI are NOT in this repo.
 ### What is incomplete / planned / deferred
 - **4–5 physical-phone stress test — DEFERRED (NOT performed).** Only 3 physical Android devices are
   available. Must NOT be described as "passed"/"validated"/"complete". See §8 and §16.
-- **Integration Stages 0a–5 committed** — user will commit manually through GitHub Desktop. 67 files
-  (13 modified + 54 new) in the working tree. `.gitignore` and `gradlew.bat` excluded.
-- **Stage 6: End-to-end wiring** — requires physical device testing with the integrated app shell.
+- **Integration Stages 0a–5 committed and published** — commit `a1ec30d` on `integration/ab-component-c`.
+- **Stage 6A: Single-device verification — COMPLETED.** Physical Android device test passed: onboarding,
+  SOS creation, location, persistence across app kill, status screen all verified. See §17.9.
+- **Stage 6B-1: Relay wiring + foreground notification persistence fix — PHYSICALLY VERIFIED** (Android 17/SDK 37). Stage 6B-2 (`propagateLocalSos` wiring), 6B-3 (`StubRelayRepository` replacement), and multi-device/backend testing remain.
 - **Stage 7: Final documentation cleanup.**
 - TTL cleanup, low-battery throttle, simulation/fallback demo mode (later roadmap days).
 
@@ -338,7 +338,8 @@ Work intentionally postponed. Especially the C-component integration items:
   - ~~Replace `MainActivity` scaffold with C's Compose app (real SOS creation, Status screen, onboarding).~~ DONE (Stage 5).
   - Reconcile `device_id` semantics (§1.2 "installation ID" vs §1.9 "generated on first app install";
     `DevicePreferences` currently uses a stable installation id as fallback).
-  - Stage 6: End-to-end wiring + physical device testing with the integrated app shell.
+  - ~~Stage 6A: Single-device physical verification~~ DONE (Stage 6A PASS).
+  - Stage 6B: Relay integration wiring + multi-device + backend testing — 6B-1 physically verified; 6B-2/6B-3/multi-device/backend remain.
   - Stage 7: Final documentation cleanup.
 - **Gateway/network:** ~~implement `:network`~~ DONE (Stage 2). Backend device registration, TTL cleanup
   (48–72h via `last_relayed_at`), low-battery throttle (Day 10), simulation/fallback demo mode (Day 12).
@@ -423,18 +424,20 @@ Recorded decisions and the reasons given. Do not reinterpret or redesign them.
 
 ## 13. NEXT DEVELOPMENT STEP
 
-Ground truth of the repo: Day 7 is committed (`320bfbd`). The working tree contains Integration
-Stages 0a–5 (67 files: build files, network module, data module additions, relay seam, Compose app
-shell). 75 automated tests pass. Android Studio build succeeded. App launched and UI screens rendered.
+Ground truth of the repo: HEAD is `a1ec30d` on `integration/ab-component-c` (Stages 0a–5 committed). Day 7 (`320bfbd`) is the parent commit. The working tree contains Stage 6B-1 code changes (4 modified files). 75 automated tests pass.
+
+**Current state:**
+- Integration Stages 0a–5 committed and published (`a1ec30d`).
+- Stage 6A: Single-device physical verification PASSED.
+- Stage 6B-1: Relay wiring + foreground notification persistence fix — PHYSICALLY VERIFIED on Android 17/SDK 37.
 
 **Next steps, in order:**
-1. **Commit integration work** — all Integration Stages 0a–5 (code + documentation) committed as a
-   coherent snapshot through GitHub Desktop.
-2. **Stage 6: End-to-end wiring** — physical device testing with the integrated Compose app shell.
-   Verify SOS creation, relay start/stop, onboarding flow, and status screen work end-to-end.
-3. **Stage 7: Final documentation cleanup** — update all docs to reflect the integrated state.
-4. **Do NOT interpret the deferred 4–5 phone test as a blocker** — it remains a future validation item
-   pending availability of additional physical devices (see §8/§16).
+1. ~~**Stage 6B-1: Relay wiring + notification persistence fix**~~ — DONE (physically verified).
+2. **Stage 6B-2: `propagateLocalSos()` wiring** — call after SOS creation to push local SOS into the relay mesh immediately.
+3. **Stage 6B-3: `StubRelayRepository` replacement** — real relay data instead of the empty stub.
+4. **Stage 6B-4: Multi-device + backend testing** — verify SOS creation → relay propagation → gateway
+   upload on 2+ physical devices with a running backend.
+5. **Stage 7: Final documentation cleanup** — update all docs to reflect the integrated state.
 
 ---
 
@@ -704,6 +707,96 @@ or overwrite validated A+B relay code.
 
 | Stage | Description | Status |
 |---|---|---|
-| 6 | End-to-end wiring + physical device test | ❌ Not started |
+| 6A | Single-device physical verification (onboarding, SOS, location, persistence, status) | ✅ PASS |
+| 6B-1 | Relay wiring + foreground notification persistence fix | ✅ PASS (physically verified) |
+| 6B-2 | `propagateLocalSos()` wiring | ❌ Not started |
+| 6B-3 | `StubRelayRepository` replacement | ❌ Not started |
 | 7 | Final documentation cleanup | ❌ Not started |
 | 8 | Optional optimizations | ❌ Not started |
+
+### 17.9 — Stage 6A: Single-device physical verification
+
+**Date:** 2026-08-24
+**Device:** Physical Android phone (real hardware, not emulator)
+**Branch:** `integration/ab-component-c` (commit `a1ec30d`)
+**Result: PASS**
+
+#### Test results
+
+| # | Test | Result | Notes |
+|---|---|---|---|
+| 1 | Onboarding flow | ✅ PASS | Medical profile setup completed successfully |
+| 2 | SOS creation | ✅ PASS | SOS created, navigated through all screens without crashes |
+| 3 | Location permission | ✅ PASS | Permission requested, granted, location obtained |
+| 4 | Persistence across app kill | ✅ PASS | SOS survived full app kill + reopen. Emergency title and time retained |
+| 5 | Status screen | ✅ PASS | Local SOS data displayed correctly |
+
+#### Observed behavior (not formally verified)
+- After entering the emergency/status flow, the user could not back out of the "waiting for connection" screen. This is consistent with intended duplicate-prevention UI behavior, but was NOT formally verified as duplicate prevention — it is only an observed UI/flow behavior.
+
+#### What was NOT tested in Stage 6A
+- Backend/gateway delivery (no backend was running)
+- Multi-device relay behavior (single device only)
+- RelayForegroundService activation (not started — relay not wired yet)
+- SOS transmission to another device (not tested)
+- Network upload success (not tested)
+
+#### What remains for Stage 6B
+- ~~Wire `RoomRelayDataSource` → `RelayDataSourceProvider` (or Hilt)~~ DONE (Stage 6B-1)
+- ~~Start `RelayForegroundService` from app startup~~ DONE (Stage 6B-1)
+- Call `propagateLocalSos()` after SOS creation (Stage 6B-2)
+- Replace `StubRelayRepository` with real relay data (Stage 6B-3)
+- Test on 2+ physical devices
+- Verify backend upload with a running server
+
+### 17.10 — Stage 6B-1: Foreground Notification Persistence Fix
+
+**Date:** 2026-08-24
+**Branch:** `integration/ab-component-c`
+**Device:** Android 17 / SDK 37 (physical)
+**Result: PASS**
+
+#### Problem
+
+On Android 13+ (API 33+), foreground service notifications can be swiped away from the notification shade even when `setOngoing(true)` and `FOREGROUND_SERVICE` flags are present. This is standard modern Android platform behavior, NOT a regression introduced by the integration work.
+
+ADB diagnostics confirmed:
+- `RelayForegroundService` remained active with `isForeground=true` and `foregroundId=1001` after the notification was swiped away.
+- The foreground notification still retained `ONGOING_EVENT | NO_CLEAR | FOREGROUND_SERVICE` flags.
+- Notification channel `relay_foreground` was healthy: `mImportance=2`, `mUserLockedFields=0`, `mDeleted=false`.
+
+Both the old package (`com.sih.app`) and current package (`com.sih.android`) exhibited identical behavior on the same device — notifications could be swiped away in both cases.
+
+#### Implementation
+
+**File:** `relay/src/main/java/com/sih/relay/service/RelayForegroundService.kt` (lines 134–143)
+
+Inside the existing `DutyCycler` `onWindowStart` callback, before `relayManager.startScanWindow()`:
+
+```kotlin
+onWindowStart = {
+    try {
+        startForeground(
+            RelayNotification.NOTIFICATION_ID,
+            RelayNotification.build(this@RelayForegroundService)
+        )
+    } catch (e: Exception) {
+        Log.w(TAG, "Notification refresh failed", e)
+    }
+    relayManager.startScanWindow()
+},
+```
+
+#### Physical-device verification — ALL PASSED on Android 17 / SDK 37
+
+| # | Test | Result | Notes |
+|---|---|---|---|
+| 1 | Notification swipe test | ✅ PASS | Swiped away → reappeared on next duty-cycle window. Repeated 3× successfully. |
+| 2 | Duty-cycle verification | ✅ PASS | Confirmed ~10s active / ~40s sleep / ~50s full cycle with `Opening scan window` → `Closing scan window` logs. |
+| 3 | Remove-from-Recents test | ✅ PASS | Notification returned, duty cycle continued, `dumpsys` confirmed `isForeground=true` and `foregroundId=1001`. |
+| 4 | Force Stop test | ✅ PASS | Notification disappeared, service terminated (expected). |
+| 5 | Relaunch after Force Stop | ✅ PASS | Notification reappeared, relay started, advertising/discovery began, duty cycling resumed. |
+
+#### Harmless startup log (not a regression)
+
+`startScanWindow() ignored — window already open` — caused by `startRelay()` opening the initial scan window before the DutyCycler callback fires. The existing guard prevents duplicate work. All subsequent duty cycles operate correctly. Do not treat as a regression.

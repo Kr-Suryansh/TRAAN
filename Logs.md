@@ -598,3 +598,74 @@ to restore clean working state for manual commit.
 
 ### Integration stages 0a–5 result: PASS (pending manual commit)
 
+---
+
+## 2026-08-24 — Stage 6A: Single-device Physical Verification
+
+### 14:00 — Stage 6A: Physical Android device test
+
+**Branch:** `integration/ab-component-c` (commit `a1ec30d`)
+**Device:** Physical Android phone (real hardware)
+**Result: PASS**
+
+#### Test results
+
+1. **Onboarding:** Medical profile setup completed successfully.
+2. **SOS creation:** SOS created, navigated through all screens without crashes or interruptions.
+3. **Location:** Permission requested, granted, location obtained, flow continued normally.
+4. **Persistence:** SOS created → app completely killed/closed → app reopened → SOS still present. Emergency title and time retained.
+5. **Status screen:** Local SOS data displayed correctly.
+
+#### Observed behavior
+- After entering the emergency/status flow, user could not back out of "waiting for connection" screen. Consistent with intended duplicate-prevention UI, but NOT formally verified as duplicate prevention.
+
+#### NOT tested
+- Backend/gateway delivery (no backend running)
+- Multi-device relay (single device only)
+- RelayForegroundService (not started — relay not wired)
+- SOS transmission to another device
+- Network upload success
+
+### Stage 6A result: PASS
+
+Proceeding to Stage 6B (relay integration wiring + multi-device + backend testing).
+
+---
+
+## 2026-08-24 — Stage 6B-1: Foreground Notification Persistence Fix (PASSED)
+
+### Investigation: notification swiped away on Android 17
+
+**Observation:** On Android 17 / SDK 37, the foreground service notification for `RelayForegroundService` could be swiped away from the notification shade despite `setOngoing(true)` and `FOREGROUND_SERVICE` flags.
+
+**Investigation:** ADB diagnostics confirmed:
+- `RelayForegroundService` remained `isForeground=true`, `foregroundId=1001` after dismissal.
+- Notification object retained `ONGOING_EVENT | NO_CLEAR | FOREGROUND_SERVICE` flags.
+- Channel `relay_foreground` healthy: `mImportance=2`, `mUserLockedFields=0`, `mDeleted=false`.
+- Both old (`com.sih.app`) and current (`com.sih.android`) builds exhibited identical behavior on the same device.
+
+**Root cause:** Standard Android 13+ (API 33+) platform behavior. Foreground service notifications can be swiped away despite `setOngoing(true)`. NOT a regression.
+
+### Implementation: notification refresh in DutyCycler callback
+
+**File modified:** `relay/src/main/java/com/sih/relay/service/RelayForegroundService.kt` (lines 134–143)
+
+Added `startForeground()` call inside the existing `DutyCycler` `onWindowStart` callback, before `relayManager.startScanWindow()`:
+- Rebuilds and reposts the notification each scan-window start (~40s after swipe).
+- Wrapped in try/catch to isolate failures from the scan window operation.
+- No new timer, coroutine, scheduler, or DutyCycler API changes.
+
+### Physical-device verification (ALL PASSED on Android 17 / SDK 37)
+
+1. **Notification swipe test:** Swiped away → reappeared on next duty-cycle window. Repeated 3× successfully.
+2. **Duty-cycle verification:** Confirmed ~10s active / ~40s sleep / ~50s full cycle.
+3. **Remove-from-Recents test:** Notification returned, duty cycle continued, `dumpsys` confirmed `isForeground=true`, `foregroundId=1001`.
+4. **Force Stop test:** Notification disappeared, service terminated (expected).
+5. **Relaunch after Force Stop:** Notification reappeared, relay started, advertising/discovery began, duty cycling resumed.
+
+**Harmless startup log observed:** `startScanWindow() ignored — window already open` — caused by `startRelay()` opening the initial scan window before the DutyCycler callback. Existing guard prevents duplicate work. Not a regression.
+
+### Stage 6B-1 result: PASS (physically verified on Android 17 / SDK 37)
+
+Relay wiring (AppModule.kt, SihApplication.kt, MainActivity.kt) + foreground notification persistence fix all verified. Proceeding to Stage 6B-2 (`propagateLocalSos` wiring).
+

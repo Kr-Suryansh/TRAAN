@@ -739,8 +739,24 @@ above; this documents the current plan and status.
 3. Serialization plugin not applied in `:data` (no `@Serializable` classes exist there)
 4. `SosRequestDto` uses `String` fields instead of enum for `emergencyType`/`severityHint` (backend contract unchanged)
 
+### Stage 6A — Single-device physical verification (PASS)
+
+**Date:** 2026-08-24. Physical Android device. Commit `a1ec30d`.
+
+| Test | Result |
+|---|---|
+| Onboarding flow | ✅ PASS |
+| SOS creation | ✅ PASS |
+| Location permission + acquisition | ✅ PASS |
+| Persistence across app kill | ✅ PASS — emergency title and time retained |
+| Status screen | ✅ PASS |
+
+**Observed:** User could not back out of status flow after entering (consistent with duplicate-prevention intent, not formally verified as such).
+
+**NOT tested:** Backend delivery, multi-device relay, relay service activation, SOS transmission to another device.
+
 ### Next steps
 
-- **Stage 6:** End-to-end wiring — requires physical device testing
+- **Stage 6B:** Relay integration wiring + multi-device + backend testing — requires code changes + 2+ physical devices
 - **Stage 7:** Final documentation cleanup
 - **Stage 8:** Optional optimizations

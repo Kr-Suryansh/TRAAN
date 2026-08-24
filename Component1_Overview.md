@@ -66,7 +66,8 @@ but uncommitted — pending manual commit through GitHub Desktop.
 **Integration Stages 0a–5 (A+B ↔ Component C)**: Selective file extraction from Component C's repo into the validated A+B codebase. Build files merged (Compose, Hilt, KSP, Retrofit, Moshi, WorkManager). Network module created (full Retrofit HTTP layer). Data module extended (Hilt DI, repositories, WorkManager workers). Relay seam added (`RelayRepository` interface). Compose app shell created (Home/Onboarding/Status screens, Material3 theme, navigation). Android Studio build succeeded; app launched and UI screens rendered correctly. All A+B relay code preserved (zero diff). Pending manual commit.
 
 ## K. What is NOT Implemented Yet
-- **End-to-end wiring (Stage 6)** — physical device testing with the integrated app shell
+- **Stage 6A: Single-device physical verification** — PASSED (onboarding, SOS, location, persistence, status)
+- **Stage 6B: Relay integration + multi-device + backend testing** — NOT YET COMPLETED
 - **Final documentation cleanup (Stage 7)**
 - Low-battery throttle mode (Day 10)
 - Fallback simulation demo mode (Day 12)

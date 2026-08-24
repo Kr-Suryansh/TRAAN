@@ -3,9 +3,12 @@ package com.sih.app.di
 import com.sih.network.api.DisasterApi
 import com.sih.network.client.RetrofitClientFactory
 import com.sih.network.interceptor.AuthInterceptor
+import com.sih.data.db.dao.SosRequestDao
 import com.sih.data.prefs.DevicePreferences
+import com.sih.data.relay.RoomRelayDataSource
 import com.sih.relay.RelayRepository
 import com.sih.relay.StubRelayRepository
+import com.sih.relay.api.RelayDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -31,6 +34,12 @@ object AppModule {
         authInterceptor = authInterceptor,
         isDebug         = com.sih.app.BuildConfig.DEBUG
     )
+
+    @Provides
+    @Singleton
+    fun provideRelayDataSource(
+        sosRequestDao: SosRequestDao
+    ): RelayDataSource = RoomRelayDataSource(sosRequestDao)
 
     @Provides
     @Singleton

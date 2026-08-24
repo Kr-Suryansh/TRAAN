@@ -131,7 +131,17 @@ class RelayForegroundService : Service() {
         dutyCycler = DutyCycler(
             activeWindowMillis = ACTIVE_WINDOW_MILLIS,
             sleepWindowMillis = SLEEP_WINDOW_MILLIS,
-            onWindowStart = { relayManager.startScanWindow() },
+            onWindowStart = {
+                try {
+                    startForeground(
+                        RelayNotification.NOTIFICATION_ID,
+                        RelayNotification.build(this@RelayForegroundService)
+                    )
+                } catch (e: Exception) {
+                    Log.w(TAG, "Notification refresh failed", e)
+                }
+                relayManager.startScanWindow()
+            },
             onWindowStop = { relayManager.stopScanWindow() },
             scope = serviceScope
         )
