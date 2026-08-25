@@ -52,8 +52,7 @@ The `RelayApi` provides three simple commands for the app to use:
 The **`:data`** module owns the Room database. The `:relay` module does not use Room directly to maintain strict separation of concerns. If `:relay` depended on Room, the architecture would become tangled. Instead, `:relay` just defines what it needs via the `RelayDataSource` interface, and the `:data` module handles the actual database work.
 
 ## J. Current Implementation Status
-Days 1–7 are complete and committed. Integration Stages 0a–5 (A+B ↔ Component C merge) are complete
-but uncommitted — pending manual commit through GitHub Desktop.
+Days 1–7 are complete and committed. Integration Stages 0a–5 (A+B ↔ Component C merge) are committed at `a1ec30d` on `integration/ab-component-c`.
 
 **Day 2 physical proof**: Demonstrated on two real Android phones (Pixel 8 and CPH2793/Oppo) with no internet connection.
 
@@ -63,12 +62,21 @@ but uncommitted — pending manual commit through GitHub Desktop.
 
 **Day 5–7**: Foreground service + duty cycling, Room persistence + permission preflight, diagnostic instrumentation + 3-phone stress validation — all complete and committed. See `Logs.md` and `walkthrough.md`.
 
-**Integration Stages 0a–5 (A+B ↔ Component C)**: Selective file extraction from Component C's repo into the validated A+B codebase. Build files merged (Compose, Hilt, KSP, Retrofit, Moshi, WorkManager). Network module created (full Retrofit HTTP layer). Data module extended (Hilt DI, repositories, WorkManager workers). Relay seam added (`RelayRepository` interface). Compose app shell created (Home/Onboarding/Status screens, Material3 theme, navigation). Android Studio build succeeded; app launched and UI screens rendered correctly. All A+B relay code preserved (zero diff). Pending manual commit.
+**Integration Stages 0a–5 (A+B ↔ Component C)**: Selective file extraction from Component C's repo into the validated A+B codebase. Build files merged (Compose, Hilt, KSP, Retrofit, Moshi, WorkManager). Network module created (full Retrofit HTTP layer). Data module extended (Hilt DI, repositories, WorkManager workers). Relay seam added (`RelayRepository` interface). Compose app shell created (Home/Onboarding/Status screens, Material3 theme, navigation). Android Studio build succeeded; app launched and UI screens rendered correctly. All A+B relay code preserved (zero diff). Committed at `a1ec30d`.
+
+**Stage 6A**: Single-device physical verification — PASSED (onboarding, SOS, location, persistence, status).
+
+**Stage 6B**: Relay integration wiring + multi-device + backend testing.
+- 6B-1: Relay wiring + foreground notification — COMMITTED (`cca669f`), physically verified.
+- 6B-2: `propagateLocalSos()` wiring — physically verified on 3-device A→B→C.
+- 6B-3: StubRelayRepository — functionally complete (non-blocking). Stub exists but relay-received SOS already flow to Room via `RoomRelayDataSource`. Remaining: code-level cleanup for process-restart resilience.
+- 6B-4: Multi-device + backend testing — BLOCKED on backend infrastructure.
+
+**Physical relay-engine testing (3-device A→B→C)**: All 4 critical tests PASSED — controlled multi-hop, duplicate/echo-loop guard, disconnect/reconnect missed-message resync, zero-peer persistence. See `Logs.md`.
 
 ## K. What is NOT Implemented Yet
-- **Stage 6A: Single-device physical verification** — PASSED (onboarding, SOS, location, persistence, status)
-- **Stage 6B: Relay integration + multi-device + backend testing** — NOT YET COMPLETED
-- **Final documentation cleanup (Stage 7)**
+- **Stage 6B-4: Multi-device + backend testing** — BLOCKED on backend infrastructure. Cannot run end-to-end tests without a running backend at `http://10.0.2.2:8000/api/v1/`.
+- **StubRelayRepository code cleanup** — non-blocking. The stub still exists but relay-received SOS already flow to Room. Remaining: implement a real `RelayRepository` backed by the relay's live state for process-restart resilience.
 - Low-battery throttle mode (Day 10)
 - Fallback simulation demo mode (Day 12)
 - TTL (Time-to-Live) cleanup for expiring old messages (Later)
@@ -85,13 +93,20 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 
 ## M. Verification Status
 - **Build**: Successfully compiled all four modules (`./gradlew :relay:test :relay:build` passed in 18s).
-- **Unit Tests**: Passed successfully (including `RelayModelsTest` and `RelayPayloadCodecTest`).
+- **Unit Tests**: 75 JVM tests pass (64 relay + 11 data), 0 failures.
 - **Lint**: Passed with no blocking errors.
 - **Gradle Wrapper**: Successfully generated via JBR.
 - **Physical Device Test (Day 2)**: Confirmed end-to-end P2P SOSRequest transmission on two real Android phones (Pixel 8 → CPH2793) via Nearby Connections with no internet.
 - **Physical Device Test (Day 3)**: Confirmed bidirectional `RelayManifest` exchange, manifest decoding, and UUID diff execution on two real Android phones across different OS versions (Pixel 8 / Android 17 ↔ Vivo / Android 15) over Nearby Connections with no internet. Non-empty SOS transfer & persistence await Component C / Room integration.
 - **Physical Device Test (Day 4)**: Confirmed 3-phone A → B → C multi-hop relay on physical phones with no internet. Hop accounting verified: A created the SOS at `relayHopCount=0`/`PENDING_LOCAL`, B received it at `relayHopCount=1`/`IN_RELAY`, and C received it at `relayHopCount=2`/`IN_RELAY`; both B and C saved it via `saveSosMessages()`. RelayManifest/UUID synchronization prevented blind retransmission to peers that already held the UUID. Day 4 is COMPLETE.
-- **Integration Build (Stages 0a–5)**: Android Studio build succeeded. App launched on device; Home, Onboarding, Status Compose screens appeared and rendered correctly. All A+B relay code preserved. Namespace fix applied (`com.sih.android` → `com.sih.app`). 75 JVM tests pass (64 relay + 11 data). Pending manual commit.
+- **Integration Build (Stages 0a–5)**: Android Studio build succeeded. App launched on device; Home, Onboarding, Status Compose screens appeared and rendered correctly. All A+B relay code preserved. Namespace fix applied (`com.sih.android` → `com.sih.app`). Committed at `a1ec30d`.
+- **Stage 6A**: Single-device physical verification PASSED (onboarding, SOS, location, persistence, status).
+- **Stage 6B-1**: Relay wiring + foreground notification persistence fix — COMMITTED (`cca669f`), physically verified on Android 17/SDK 37.
+- **Stage 6B-2**: `propagateLocalSos()` wiring — physically verified on 3-device A→B→C.
+- **Physical relay-engine testing (3-device A→B→C)**: All 4 critical tests PASSED — controlled multi-hop, duplicate/echo-loop guard, disconnect/reconnect missed-message resync, zero-peer persistence.
+- **Stage 6B-3**: StubRelayRepository — functionally complete. Stub exists but relay-received SOS already flow to Room via `RoomRelayDataSource`. Remaining: code-level cleanup for process-restart resilience (non-blocking).
+- **Stage 6B-4**: Multi-device + backend testing — BLOCKED on backend infrastructure.
+- **Stage 7**: Final documentation cleanup — COMPLETED.
 
 ## N. What the Next Developer Should Know
 - **Source of Truth**: Always refer to `day1-contracts-and-repo-setup.md` for schemas. Do not change field names or types (like changing `Float` to `Double` or renaming `UserMedicalProfile`) without a team agreement.

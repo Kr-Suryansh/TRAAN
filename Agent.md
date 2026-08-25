@@ -21,7 +21,7 @@
 | **Day 5 status** | Foreground service + duty cycling — COMPLETE and physically verified (3-device) |
 | **Day 6 status** | Room persistence + permission preflight + relay hardening — COMPLETE, physically verified (3-device + persistence-across-restart on C) |
 | **Day 7 status** | Diagnostic instrumentation + 3-phone stress validation — COMPLETE (committed `320bfbd`) |
-| **Integration status** | Stages 0a–5 A+B ↔ Component C — COMPLETE (uncommitted, pending manual commit) |
+| **Integration status** | Stages 0a–5 A+B ↔ Component C — COMPLETE (committed `a1ec30d` on `integration/ab-component-c`) |
 
 ---
 

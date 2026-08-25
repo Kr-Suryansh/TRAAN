@@ -21,9 +21,12 @@ import retrofit2.Response
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
+import android.location.Location
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.tasks.Tasks
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
+import com.google.android.gms.tasks.Task
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GatewaySyncWorkerTest {
@@ -35,6 +38,7 @@ class GatewaySyncWorkerTest {
     private val relayRepository = mockk<RelayRepository>(relaxed = true)
     private val workManager = mockk<WorkManager>(relaxed = true)
     private val fusedLocationProviderClient = mockk<FusedLocationProviderClient>(relaxed = true)
+    private val locationTask = mockk<Task<Location?>>()
 
     @Before
     fun setUp() {
@@ -48,7 +52,13 @@ class GatewaySyncWorkerTest {
 
         mockkStatic(LocationServices::class)
         every { LocationServices.getFusedLocationProviderClient(any<Context>()) } returns fusedLocationProviderClient
-        every { fusedLocationProviderClient.lastLocation } returns Tasks.forResult(null)
+        every { fusedLocationProviderClient.lastLocation } returns locationTask
+        every { locationTask.addOnSuccessListener(any<OnSuccessListener<Location?>>()) } answers {
+            val listener = firstArg<OnSuccessListener<Location?>>()
+            listener.onSuccess(null)
+            locationTask
+        }
+        every { locationTask.addOnFailureListener(any<OnFailureListener>()) } returns locationTask
 
         every { devicePreferences.isRegistered() } returns true
         every { devicePreferences.getDeviceId() } returns "device_123"

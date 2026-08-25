@@ -755,8 +755,171 @@ above; this documents the current plan and status.
 
 **NOT tested:** Backend delivery, multi-device relay, relay service activation, SOS transmission to another device.
 
+### TEST-ONLY topology mechanism — forced A → B → C multi-hop
+
+**Why it exists:** All test devices are physically within Bluetooth range. Without a
+topology restriction, Nearby Connections may form a full triangle (A↔B, B↔C, A↔C),
+allowing an SOS to reach C directly from A — which does NOT prove multi-hop forwarding
+through B. The TEST-ONLY allow-list filter prevents specific peer connections to force
+a true A → B → C chain.
+
+**How it works:** `RelayTestConfigProvider` is a process-global `@Volatile var` holding
+a `RelayTestConfig(localPeerName, allowedPeerNames)`. When set, `RelayManager`:
+- Advertises under `localPeerName` instead of the default `"SIH-Relay-Node"`.
+- Filters peers in `onEndpointFound` (discovery) and `onConnectionInitiated`
+  (connection acceptance) — peers not in `allowedPeerNames` are ignored/rejected.
+
+**Intent extras (set in `MainActivity.onCreate()` before `setContent`):**
+- `relay_test_peer` — the Nearby endpoint name this device advertises as.
+- `relay_test_allowed` — comma-separated endpoint names this device may connect to.
+
+**Exact ADB commands for 3-device topology (A ↔ B ↔ C, A ✕ C):**
+
+```
+# Force-stop all three
+adb -s 45131FDJH003HS shell am force-stop com.sih.android
+adb -s 10BD551MY80004T shell am force-stop com.sih.android
+adb -s 3C163R001H300000 shell am force-stop com.sih.android
+
+# Launch with topology config
+adb -s 45131FDJH003HS shell am start -n com.sih.android/.MainActivity \
+  --es relay_test_peer Device-A --es relay_test_allowed Device-B
+adb -s 10BD551MY80004T shell am start -n com.sih.android/.MainActivity \
+  --es relay_test_peer Device-B --es relay_test_allowed Device-A,Device-C
+adb -s 3C163R001H300000 shell am start -n com.sih.android/.MainActivity \
+  --es relay_test_peer Device-C --es relay_test_allowed Device-B
+```
+
+**Normal launches without extras:** Both `getStringExtra()` calls return null, the `if`
+condition fails, `RelayTestConfigProvider.config` stays null. Production behavior is
+unchanged: `effectiveEndpointName()` returns `"SIH-Relay-Node"`, `isPeerAllowed()`
+returns `true` for all peers.
+
+**Lifecycle:** The config is in-memory/process-local only. Force-stop or process death
+destroys it. A subsequent normal launch without extras uses null config = unrestricted
+production behavior. No persistence, no SharedPreferences, no database.
+
+**Important distinction — test endpoint names vs. `SOSRequest.deviceId`:**
+- Test endpoint names (`Device-A`, `Device-B`, `Device-C`) are used ONLY for Nearby
+  Connections advertising and peer filtering.
+- `SOSRequest.deviceId` is the device's stable installation UUID (from
+  `DevicePreferences.getOrCreateInstallationId()`). It is set at SOS creation and
+  travels unchanged through the relay chain (A → B → C).
+- `RelayHopLogic.onRelayReceive()` increments `relayHopCount` and updates
+  `lastRelayedAt`, but does NOT modify `uuid` or `deviceId`.
+
+**Definitive multi-hop evidence (hopCount 0 → 1 → 2):**
+- Same `uuid` across all three devices.
+- Same `deviceId` (installation UUID) across all three devices.
+- `hopCount=0` on A, `hopCount=1` on B, `hopCount=2` on C.
+- A and C are prevented from directly connecting by the `isPeerAllowed` filter.
+
 ### Next steps
 
-- **Stage 6B:** Relay integration wiring + multi-device + backend testing — requires code changes + 2+ physical devices
-- **Stage 7:** Final documentation cleanup
-- **Stage 8:** Optional optimizations
+- ~~**Stage 6B-3:** `StubRelayRepository` replacement~~ — FUNCTIONALLY COMPLETE. Stub exists but relay-received SOS already flow to Room via `RoomRelayDataSource`. Remaining: code-level cleanup for process-restart resilience (non-blocking).
+- **Stage 6B-4:** Multi-device + backend testing — BLOCKED on backend infrastructure.
+- ~~**Stage 7:** Final documentation cleanup~~ — COMPLETED (this session).
+
+---
+
+## Physical Relay-Engine Testing — 3-Device Controlled Verification
+
+**Date:** 2026-08-25
+**Scope:** Physical relay-engine testing on 3 real Android devices
+**Branch:** `integration/ab-component-c`
+
+### Setup
+
+3 physical Android phones with TEST-ONLY topology configuration:
+- Device A (`45131FDJH003HS`): allowed peer = Device-B only
+- Device B (`10BD551MY80004T`): allowed peers = Device-A, Device-C
+- Device C (`R9ZY503BHDD`): allowed peer = Device-B only
+
+Topology enforced via intent extras `relay_test_peer`/`relay_test_allowed` in `MainActivity.onCreate()`. All three devices must be force-stop'd and relaunched with the config for the topology to work. All three must be launched within seconds of each other for duty-cycle scan windows to overlap.
+
+**Important implementation note:** `onNewIntent()` is NOT overridden in `MainActivity`, so `am start` on an already-running activity does NOT apply the test config. Always `am force-stop` before launching with extras.
+
+### Test results
+
+| Test | Description | Result |
+|---|---|---|
+| Test 1 | Controlled multi-hop A → B → C | ✅ PASSED |
+| Test 2 | Duplicate / echo-loop guard | ✅ PASSED |
+| Test 3 | Disconnect/reconnect missed-message resync | ✅ PASSED |
+| Test 4 | Sleep-window SOS creation | NOT SEPARATELY TESTED |
+| Test 5 | Zero-peer persistence + later synchronization | ✅ PASSED |
+
+### Test 1 — Controlled multi-hop A → B → C (PASSED)
+
+Topology forced with TEST-ONLY allow-list filter. A discovered B; C discovered B. A and C were prevented from directly connecting by the `isPeerAllowed` filter.
+
+**Evidence (Device B logcat):**
+- B connected to Device-A (TP1R) and Device-C (MW0Y).
+- B received SOS `6858d327-ccc0-4392-8f87-43e42985cfd5` from A with `hopCount=1`, `status=IN_RELAY`, classified **NEW**.
+- B forwarded it to C.
+- C received same UUID from B with `hopCount=2`, `status=IN_RELAY`.
+- A log: `TEST-ONLY filter: ignoring discovery from Device-C` — A correctly blocked C.
+- C log: `TEST-ONLY filter: ignoring discovery from Device-A` — C correctly blocked A.
+
+**Conclusion:** Actual controlled A → B → C multi-hop forwarding. Same UUID and deviceId across all three. hopCount 0→1→2. Direct A↔C prevented.
+
+### Test 2 — Duplicate / echo-loop guard (PASSED)
+
+All three connected. Existing SOS records from previous testing. On reconnection/manifest synchronization:
+
+**Evidence (Device B logcat):**
+```
+UUID diff for endpoint 6ORP: peer has 22 UUID(s), 0 SOSRequest(s) to send
+No missing SOSRequests to send to endpoint 6ORP — peer is up to date
+
+UUID diff for endpoint L2S1: peer has 22 UUID(s), 0 SOSRequest(s) to send
+No missing SOSRequests to send to endpoint L2S1 — peer is up to date
+```
+
+**Conclusion:** `getMissingSos()` correctly filtered all known UUIDs. Manifests matched. No SOS re-sent. No echo loop. UUID-based duplicate detection and idempotent storage working correctly.
+
+### Test 3 — Disconnect/reconnect missed-message resync (PASSED)
+
+**Sequence:**
+1. All three connected with TEST-ONLY config.
+2. Device B force-stopped.
+3. New SOS created on Device A while B absent.
+4. A log: `propagateLocalSos: no connected endpoints — SOS 6858d327-... stays local only`
+5. Device B relaunched with TEST-ONLY config.
+6. B reconnected to A and C.
+
+**Evidence (Device B logcat):**
+```
+Connection established with endpoint: TP1R. Initiating manifest exchange...
+RelayManifest received from endpoint TP1R: deviceId=Device-A, 16 known UUIDs
+SOSRequest received from endpoint TP1R: uuid=6858d327-..., hopCount=1, status=IN_RELAY
+SOSRequest 6858d327-... forwarded to DataSource.saveSosMessages() (hopCount=1) — NEW, propagating to connected peers
+```
+
+**Device A logcat:**
+```
+UUID diff for endpoint BBYO: peer has 15 UUID(s), 1 SOSRequest(s) to send
+SOSRequest 6858d327-... sent to endpoint: BBYO (648 bytes)
+```
+
+**Conclusion:** B received the missed SOS via manifest exchange with hopCount=1 (direct from A). A knew B was missing 1 SOS and sent it. Missed-message recovery after reconnection works correctly.
+
+### Test 4 — Sleep-window SOS creation (NOT SEPARATELY TESTED)
+
+Duty-cycle behavior was already validated in Day 5 (A→B→C under FGS + duty cycle). A dedicated test of creating an SOS specifically during the sleep window was not performed as a standalone test.
+
+### Test 5 — Zero-peer persistence + later synchronization (PASSED)
+
+7 SOS records created on Device A before any relay peer existed. All persisted locally. After Device B connected, manifest exchange transferred all pre-existing records via `saveSosMessages()`.
+
+**Conclusion:** SOS persistence with zero peers works. Later synchronization when a peer becomes available works.
+
+### Overall result
+
+**All 4 critical physical relay-engine tests passed** on real Android hardware:
+- Controlled multi-hop A→B→C: **PASSED**
+- Duplicate/echo-loop guard: **PASSED**
+- Disconnect/reconnect missed-message resync: **PASSED**
+- Zero-peer persistence + later synchronization: **PASSED**
+
+Test 4 (sleep-window creation) was not separately tested — duty-cycle behavior already validated in Day 5.

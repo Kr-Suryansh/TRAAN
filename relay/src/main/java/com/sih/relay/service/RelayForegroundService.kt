@@ -128,6 +128,7 @@ class RelayForegroundService : Service() {
         }
 
         relayManager = RelayManager(this, dataSource ?: InMemoryFallbackStore())
+        RelayDataSourceProvider.relayManager = relayManager
         dutyCycler = DutyCycler(
             activeWindowMillis = ACTIVE_WINDOW_MILLIS,
             sleepWindowMillis = SLEEP_WINDOW_MILLIS,
@@ -206,6 +207,7 @@ class RelayForegroundService : Service() {
         Log.i(TAG, "onDestroy — stopping duty cycle and relay")
         dutyCycler.stop()
         relayManager.stopRelay()
+        RelayDataSourceProvider.relayManager = null
         serviceScope.cancel()
         super.onDestroy()
     }

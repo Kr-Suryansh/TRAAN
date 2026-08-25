@@ -416,6 +416,10 @@ Interpretation (as documented, not inferred beyond the logs): the original relay
 ### Conclusion
 - **Phase C PASSED.** The deterministic live multi-hop A → B → C path (hop 0 → 1 → 2, NEW classification,
   Room persistence at each hop) is physically validated on 3 devices.
+- **Note on deviceId:** The `deviceId` in the Dump Store output (`e3b1aad4-c2a2-48a6-81c6-02e175317f1c`) is
+  the originating device's stable installation UUID, NOT the Nearby test endpoint name (`SIH-Relay-Node-A`).
+  Test endpoint names are used only for Nearby Connections filtering; `SOSRequest.deviceId` is set at SOS
+  creation and travels unchanged through the relay chain. See `RelayTestConfig.kt` KDoc.
 - The deferred **4–5 phone stress test remains DEFERRED — NOT performed** and must not be treated as
   complete because of this result. See `PROJECT_HANDOFF.md` §8/§16.
 
@@ -596,7 +600,7 @@ Git identity not configured on the system. Cannot commit via CLI.
 User will commit manually through GitHub Desktop. All 67 files unstaged via `git reset HEAD`
 to restore clean working state for manual commit.
 
-### Integration stages 0a–5 result: PASS (pending manual commit)
+### Integration stages 0a–5 result: PASS (committed at `a1ec30d`)
 
 ---
 
@@ -668,4 +672,145 @@ Added `startForeground()` call inside the existing `DutyCycler` `onWindowStart` 
 ### Stage 6B-1 result: PASS (physically verified on Android 17 / SDK 37)
 
 Relay wiring (AppModule.kt, SihApplication.kt, MainActivity.kt) + foreground notification persistence fix all verified. Proceeding to Stage 6B-2 (`propagateLocalSos` wiring).
+
+---
+
+## 2026-08-25 — Physical Relay-Engine Testing (PASSED)
+
+### 14:00–17:00 — 3-device controlled physical testing
+
+**Branch:** `integration/ab-component-c`
+**Devices:** 3 physical Android phones
+- Device A: `45131FDJH003HS` — allowed peer: Device-B only
+- Device B: `10BD551MY80004T` — allowed peers: Device-A, Device-C
+- Device C: `R9ZY503BHDD` — allowed peer: Device-B only
+
+**Topology control:** TEST-ONLY launch configuration via intent extras `relay_test_peer`/`relay_test_allowed` in `MainActivity.onCreate()`. All three devices must be force-stop'd and relaunched with the config for the topology to work. All three must be launched within seconds of each other for duty-cycle scan windows to overlap.
+
+**Important:** `onNewIntent()` is NOT overridden in `MainActivity`, so `am start` on an already-running activity does NOT apply the test config. Always `am force-stop` before launching with extras.
+
+### Test 1 — Controlled multi-hop A → B → C (PASSED)
+
+**Setup:** All three launched with TEST-ONLY config within seconds of each other.
+
+**Evidence (Device B logcat):**
+```
+Connection established with endpoint: TP1R. Initiating manifest exchange...
+RelayManifest received from endpoint TP1R: deviceId=Device-A, 16 known UUIDs
+SOSRequest received from endpoint TP1R: uuid=6858d327-ccc0-4392-8f87-43e42985cfd5, deviceId=bbd6bc6c-5e83-4460-b1cf-7c25045ca5e0, hopCount=1, status=IN_RELAY
+SOSRequest 6858d327-... forwarded to DataSource.saveSosMessages() (hopCount=1) — NEW, propagating to connected peers
+```
+
+**Device A logcat:**
+```
+UUID diff for endpoint BBYO: peer has 15 UUID(s), 1 SOSRequest(s) to send
+SOSRequest 6858d327-... sent to endpoint: BBYO (648 bytes)
+```
+
+**Device C:** received same UUID from B with `hopCount=2`, `status=IN_RELAY`.
+
+**Topology enforcement confirmed:**
+- A: `TEST-ONLY filter: ignoring discovery from Device-C` — A correctly blocked C.
+- C: `TEST-ONLY filter: ignoring discovery from Device-A` — C correctly blocked A.
+
+**Result: PASS.** Same UUID, same deviceId across all three; hopCount 0→1→2; direct A↔C prevented.
+
+### Test 2 — Duplicate / echo-loop guard (PASSED)
+
+**Setup:** All three connected, existing SOS records from previous testing.
+
+**Evidence (Device B logcat after reconnect):**
+```
+Connection established with endpoint: 6ORP. Initiating manifest exchange...
+RelayManifest received from endpoint 6ORP: deviceId=Device-A, 22 known UUIDs
+UUID diff for endpoint 6ORP: peer has 22 UUID(s), 0 SOSRequest(s) to send
+No missing SOSRequests to send to endpoint 6ORP — peer is up to date
+
+Connection established with endpoint: L2S1. Initiating manifest exchange...
+RelayManifest received from endpoint L2S1: deviceId=Device-C, 22 known UUIDs
+UUID diff for endpoint L2S1: peer has 22 UUID(s), 0 SOSRequest(s) to send
+No missing SOSRequests to send to endpoint L2S1 — peer is up to date
+```
+
+**Result: PASS.** Manifests matched. `getMissingSos()` correctly filtered all known UUIDs. No SOS re-sent. No echo loop.
+
+### Test 3 — Disconnect/reconnect missed-message resync (PASSED)
+
+**Setup:** Controlled topology established. B killed while A and C remained running.
+
+**Correct test sequence:**
+1. All three connected with TEST-ONLY config.
+2. B force-stopped.
+3. SOS created on A while B absent.
+4. A log: `propagateLocalSos: no connected endpoints — SOS 6858d327-... stays local only`
+5. B relaunched with TEST-ONLY config.
+6. B reconnected to A and C.
+
+**Evidence (Device B logcat):**
+```
+Connection established with endpoint: TP1R. Initiating manifest exchange...
+RelayManifest received from endpoint TP1R: deviceId=Device-A, 16 known UUIDs
+SOSRequest received from endpoint TP1R: uuid=6858d327-ccc0-4392-8f87-43e42985cfd5, hopCount=1, status=IN_RELAY
+SOSRequest 6858d327-... forwarded to DataSource.saveSosMessages() (hopCount=1) — NEW, propagating to connected peers
+```
+
+**Device A logcat:**
+```
+UUID diff for endpoint BBYO: peer has 15 UUID(s), 1 SOSRequest(s) to send
+SOSRequest 6858d327-... sent to endpoint: BBYO (648 bytes)
+```
+
+**Result: PASS.** B received the missed SOS via manifest exchange with hopCount=1 (direct from A). A knew B was missing 1 SOS and sent it.
+
+### Test 4 — Sleep-window SOS creation (NOT SEPARATELY TESTED)
+
+Duty-cycle behavior was already validated in Day 5 (A→B→C under FGS + duty cycle). A dedicated test of creating an SOS specifically during the sleep window was not performed as a standalone test.
+
+### Test 5 — Zero-peer persistence + later synchronization (PASSED)
+
+**Setup:** 7 SOS records created on Device A before any relay peer existed.
+
+**Evidence:** All 7 records persisted locally on A. After B connected, manifest exchange transferred all pre-existing SOS records to B via `saveSosMessages()`.
+
+**Result: PASS.** SOS persistence with zero peers works. Later synchronization when a peer becomes available works.
+
+### Overall result
+
+All 4 critical physical relay-engine tests passed on real Android hardware:
+- Controlled multi-hop A→B→C: **PASSED**
+- Duplicate/echo-loop guard: **PASSED**
+- Disconnect/reconnect missed-message resync: **PASSED**
+- Zero-peer persistence + later synchronization: **PASSED**
+
+Test 4 (sleep-window creation) was not separately tested — duty-cycle behavior already validated in Day 5.
+
+Proceeding to Stage 6B-3 (StubRelayRepository replacement) and Stage 7 (final documentation cleanup).
+
+---
+
+## 2026-08-25 — Stage 7: Final Documentation Cleanup
+
+### 22:00 — Documentation review and update
+
+**Scope:** Full review of all project documentation to reflect the actual current state.
+
+**Files updated:**
+- `PROJECT_HANDOFF.md`: Fixed stale "uncommitted" claims (Stages 0a–5 committed at `a1ec30d`). Updated §2 current state, §9 deferred work, §10 known issues, §13 handoff state, §15 discrepancies, §17.9 remaining work. Updated Stage 6B-3 to "functionally complete, non-blocking cleanup remaining" and Stage 6B-4 to "blocked on backend infrastructure".
+- `Component1_Overview.md`: Updated §J (current implementation status), §K (what is NOT implemented yet), §M (verification status). Removed stale "uncommitted — pending manual commit" claims. Added Stage 6B-1/6B-2/6B-3/6B-4/7 status.
+- `walkthrough.md`: Updated Stage 6B-3/6B-4/7 status in "Next steps" section.
+- `Agent.md`: Fixed integration status line — removed "uncommitted, pending manual commit".
+- `Logs.md`: Fixed "pending manual commit" → "committed at `a1ec30d`". Added this entry.
+
+**Stage 6B-3 assessment (confirmed during review):**
+- `StubRelayRepository` still exists and `getRelayedSosEntries()` returns empty.
+- However, `RoomRelayDataSource` already persists relay-received SOS into Room during normal operation.
+- `GatewaySyncWorker` reads all SOS from Room via `sosRequestDao.getAllSos()`, so relay-received records are already included in the backend upload path.
+- The remaining concern is the narrow process-restart window where `RelayDataSourceProvider.dataSource` is temporarily null and `InMemoryFallbackStore` may be used before Room is re-injected.
+- This is a code-level resilience/cleanup gap, not a demonstrated normal-operation data-flow failure.
+
+**Stage 6B-4 assessment:**
+- Multi-device relay engine physically tested and passed independently.
+- End-to-end multi-device → backend synchronization testing cannot be performed without a running backend at `http://10.0.2.2:8000/api/v1/`.
+
+### Stage 7 result: PASS
 

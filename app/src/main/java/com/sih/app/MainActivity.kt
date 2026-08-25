@@ -1,6 +1,7 @@
 package com.sih.app
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -22,6 +23,8 @@ import com.sih.data.prefs.DevicePreferences
 import com.sih.data.repository.UserMedicalProfileRepository
 import com.sih.relay.RelayPermissionRequirements
 import com.sih.relay.service.RelayForegroundService
+import com.sih.relay.service.RelayTestConfig
+import com.sih.relay.service.RelayTestConfigProvider
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -42,6 +45,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // TEST-ONLY (integration/ab-component-c): parse relay topology config from
+        // launch intent extras for the 3-device A→B→C multi-hop physical verification.
+        // When set, RelayManager advertises under the given peer name and only
+        // connects to peers whose names are in the allowed set.
+        // When not set, production behavior is unchanged (allow all peers).
+        val relayPeer = intent?.getStringExtra("relay_test_peer")
+        val relayAllowed = intent?.getStringExtra("relay_test_allowed")
+            ?.split(",")?.map { it.trim() }?.toSet()
+        if (!relayPeer.isNullOrBlank() && !relayAllowed.isNullOrEmpty()) {
+            RelayTestConfigProvider.config = RelayTestConfig(relayPeer, relayAllowed)
+            Log.i("MainActivity", "TEST-ONLY relay config: peer=$relayPeer, allowed=$relayAllowed")
+        }
 
         devicePreferences.getOrCreateInstallationId()
 

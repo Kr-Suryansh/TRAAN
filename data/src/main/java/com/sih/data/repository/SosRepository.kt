@@ -130,6 +130,10 @@ class SosRepository @Inject constructor(
     fun observeSos(uuid: String): Flow<SosRequestEntity?> =
         sosRequestDao.observeSosByUuid(uuid)
 
+    /** Get a single SOS by UUID (suspend, for one-shot reads). */
+    suspend fun getSos(uuid: String): SosRequestEntity? =
+        sosRequestDao.getSosByUuid(uuid)
+
     /** All SOS records created by this device. */
     fun observeOwnSos(): Flow<List<SosRequestEntity>> {
         val deviceId = devicePreferences.getDeviceId()

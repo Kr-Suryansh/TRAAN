@@ -1,5 +1,6 @@
 package com.sih.relay.service
 
+import com.sih.relay.RelayManager
 import com.sih.relay.api.RelayDataSource
 
 /**
@@ -12,8 +13,15 @@ import com.sih.relay.api.RelayDataSource
  *
  * Component C will eventually replace this with real DI (Hilt) in :app; this tiny
  * static seam is Day 5 scaffolding only and is deliberately not a DI framework.
+ *
+ * Stage 6B-2 — [relayManager] is set by [RelayForegroundService.onCreate] so that
+ * :app can call [RelayManager.propagateLocalSos] for immediate mesh propagation of
+ * locally created SOS records. Cleared in [RelayForegroundService.onDestroy].
  */
 object RelayDataSourceProvider {
     @Volatile
     var dataSource: RelayDataSource? = null
+
+    @Volatile
+    var relayManager: RelayManager? = null
 }

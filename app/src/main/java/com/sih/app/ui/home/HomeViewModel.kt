@@ -10,8 +10,10 @@ import androidx.lifecycle.viewModelScope
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.sih.data.model.EmergencyType
+import com.sih.data.relay.SosRequestMapper
 import com.sih.data.repository.SosRepository
 import com.sih.data.repository.UserMedicalProfileRepository
+import com.sih.relay.service.RelayDataSourceProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -152,6 +154,12 @@ class HomeViewModel @Inject constructor(
         }.onSuccess { uuid ->
             _uiState.update {
                 it.copy(isCreatingSos = false, createdSosUuid = uuid)
+            }
+            // Stage 6B-2: push locally created SOS into the relay mesh immediately
+            val entity = sosRepository.getSos(uuid)
+            if (entity != null) {
+                val sos = SosRequestMapper.toSosRequest(entity)
+                RelayDataSourceProvider.relayManager?.propagateLocalSos(sos)
             }
         }.onFailure { e ->
             _uiState.update {
