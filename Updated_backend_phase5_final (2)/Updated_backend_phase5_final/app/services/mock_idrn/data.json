@@ -1,0 +1,140 @@
+[
+  {
+    "resource_id": "UK-DDN-MED-001",
+    "category": "medical",
+    "sub_type": "ambulance",
+    "custodian_agency": "Doon Medical College",
+    "quantity_total": 12,
+    "quantity_available": 10,
+    "status": "available",
+    "location": {
+      "lat": 30.3165,
+      "lng": 78.0322,
+      "district": "Dehradun"
+    },
+    "contact": "0135-2656228",
+    "last_updated_at": "2026-08-13T00:00:00Z",
+    "provenance": {
+      "source_type": "IDRN_PUBLIC_QUERY",
+      "state": "Uttarakhand",
+      "district": "Dehradun",
+      "category": "Medical Supplies",
+      "item": "Ambulance",
+      "is_estimate": false
+    }
+  },
+  {
+    "resource_id": "UK-DDN-MED-002",
+    "category": "medical",
+    "sub_type": "blood_bank",
+    "custodian_agency": "District Hospital Dehradun",
+    "quantity_total": 500,
+    "quantity_available": 350,
+    "status": "available",
+    "location": {
+      "lat": 30.3180,
+      "lng": 78.0350,
+      "district": "Dehradun"
+    },
+    "contact": "0135-2659300",
+    "last_updated_at": "2026-08-13T00:00:00Z",
+    "provenance": {
+      "source_type": "IDRN_PUBLIC_QUERY",
+      "state": "Uttarakhand",
+      "district": "Dehradun",
+      "category": "Medical Supplies",
+      "item": "Blood Bank Units",
+      "is_estimate": true,
+      "estimate_reason": "Exact current daily units vary, used a reasonable baseline for district hospital based on typical capacity."
+    }
+  },
+  {
+    "resource_id": "UK-DDN-RES-001",
+    "category": "rescue",
+    "sub_type": "jcb_excavator",
+    "custodian_agency": "PWD Dehradun",
+    "quantity_total": 8,
+    "quantity_available": 6,
+    "status": "available",
+    "location": {
+      "lat": 30.3200,
+      "lng": 78.0300,
+      "district": "Dehradun"
+    },
+    "contact": "0135-2651111",
+    "last_updated_at": "2026-08-13T00:00:00Z",
+    "provenance": {
+      "source_type": "DDMP Document",
+      "document": "Dehradun DDMP 2023",
+      "reference": "Resource Mapping Section - Public Works Department",
+      "is_estimate": false
+    }
+  },
+  {
+    "resource_id": "UK-DDN-RES-002",
+    "category": "rescue",
+    "sub_type": "motorboat",
+    "custodian_agency": "SDRF Unit Dehradun",
+    "quantity_total": 15,
+    "quantity_available": 15,
+    "status": "available",
+    "location": {
+      "lat": 30.3120,
+      "lng": 78.0400,
+      "district": "Dehradun"
+    },
+    "contact": "0135-2410197",
+    "last_updated_at": "2026-08-13T00:00:00Z",
+    "provenance": {
+      "source_type": "DDMP Document",
+      "document": "Dehradun DDMP 2023",
+      "reference": "Search and Rescue Equipment - SDRF",
+      "is_estimate": false
+    }
+  },
+  {
+    "resource_id": "UK-DDN-SHE-001",
+    "category": "shelter",
+    "sub_type": "relief_camp",
+    "custodian_agency": "Municipal Corporation Dehradun",
+    "quantity_total": 5,
+    "quantity_available": 5,
+    "status": "available",
+    "location": {
+      "lat": 30.3150,
+      "lng": 78.0380,
+      "district": "Dehradun"
+    },
+    "contact": "0135-2652511",
+    "last_updated_at": "2026-08-13T00:00:00Z",
+    "provenance": {
+      "source_type": "DDMP Document",
+      "document": "Dehradun DDMP 2023",
+      "reference": "Designated Relief Camps mapping",
+      "is_estimate": true,
+      "estimate_reason": "Aggregated from various ward-level shelter lists to represent 5 major usable camp locations."
+    }
+  },
+  {
+    "resource_id": "UK-DDN-COM-001",
+    "category": "communication",
+    "sub_type": "satellite_phone",
+    "custodian_agency": "District Disaster Management Authority",
+    "quantity_total": 20,
+    "quantity_available": 18,
+    "status": "available",
+    "location": {
+      "lat": 30.3220,
+      "lng": 78.0330,
+      "district": "Dehradun"
+    },
+    "contact": "0135-2726066",
+    "last_updated_at": "2026-08-13T00:00:00Z",
+    "provenance": {
+      "source_type": "DDMA Official Website",
+      "document": "District Disaster Control Room resources",
+      "reference": "Communication Inventory",
+      "is_estimate": false
+    }
+  }
+]

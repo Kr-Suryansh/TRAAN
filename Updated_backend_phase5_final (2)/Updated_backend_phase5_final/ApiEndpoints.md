@@ -1,0 +1,233 @@
+# Component D — Backend API Endpoints
+
+## Source of Truth
+
+These endpoints follow the Master API Blueprint / Backend contract (`Updated_antigravity-build-prompts.md`).
+Do not change endpoint paths or methods without informing the team.
+
+---
+
+## Phase 1 — Infrastructure
+
+| Method | Endpoint | Authentication | Status | Purpose |
+|---|---|---|---|---|
+| GET | `/api/v1/health` | None | ✅ COMPLETE | Backend liveness + database/PostGIS health |
+| GET | `/api/v1/stats/summary` | Authority JWT | ✅ COMPLETE | Dashboard summary (real DB aggregation) |
+
+---
+
+## Phase 2 — Authentication
+
+### 1. Device Registration
+
+**POST** `/api/v1/auth/device/register`
+
+**Authentication:** None
+
+**Request:**
+```json
+{
+  "device_model": "string",
+  "app_version": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "device_id": "string",
+  "device_jwt": "string"
+}
+```
+
+---
+
+### 2. Authority Login
+
+**POST** `/api/v1/auth/authority/login`
+
+**Authentication:** None
+
+**Request:**
+```json
+{
+  "email": "string",
+  "password": "string"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "access_token": "eyJhbG...",
+  "refresh_token": "eyJhbG...",
+  "user": {
+    "user_id": "auth-uuid",
+    "name": "Jane Doe",
+    "role": "admin",
+    "agency": "NDMA",
+    "email": "jane@sih.gov.in"
+  }
+}
+```
+
+---
+
+### 3. Authority Token Refresh
+
+**POST** `/api/v1/auth/authority/refresh`
+
+**Authentication:** None
+
+**Request:**
+```json
+{
+  "access_token": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "access_token": "string"
+}
+```
+
+---
+
+## Phase 3 — SOS Ingestion
+
+### 1. SOS Batch Upload
+
+**POST** `/api/v1/sos/batch`
+
+**Authentication:** Device JWT (`Bearer <token>`). The `gateway_device_id` in the payload must strictly match the `sub` claim in the provided JWT.
+
+**Request:**
+```json
+{
+  "gateway_device_id": "string",
+  "gateway_location": {
+    "lat": 0.0,
+    "lng": 0.0
+  },
+  "uploaded_at": "2026-08-12T12:00:00Z",
+  "sos_batch": [
+    {
+      "uuid": "string (UUID)",
+      "device_id": "string",
+      "created_at": "2026-08-12T11:50:00Z",
+      "location": {
+        "lat": 0.0,
+        "lng": 0.0,
+        "accuracy_m": 5.0
+      },
+      "is_quick_sos": true,
+      "emergency_type": "medical",
+      "severity_hint": "high",
+      "people_count": 1,
+      "medical_snapshot": {},
+      "custom_message": "string",
+      "contact_number": "string",
+      "relay_hop_count": 0,
+      "last_relayed_at": "2026-08-12T11:55:00Z",
+      "status": "pending_local"
+    }
+  ]
+}
+```
+
+**Response:** (HTTP 202 Accepted)
+```json
+{
+  "accepted_uuids": ["uuid-1", "uuid-2"],
+  "duplicate_uuids": ["uuid-3"]
+}
+```
+
+---
+
+### 2. SOS Status Query
+
+**GET** `/api/v1/sos/{uuid}/status`
+
+**Authentication:** Device JWT (`Bearer <token>`)
+
+**Response:** (HTTP 200 OK)
+```json
+{
+  "status": "pending_local"
+}
+```
+
+---
+
+## Phase 4 — Incident & Resource Management
+
+### REST Endpoints
+
+| Method | Endpoint | Authentication | Notes |
+|---|---|---|---|
+| GET | `/api/v1/incidents` | Authority JWT | Fetch incidents (supports `status` filter and `page`/`size` pagination) |
+| GET | `/api/v1/incidents/{incident_id}` | Authority JWT | Get details, returned as an envelope `{ incident: IncidentResponse, sos_reports: [SOSRequest] }` |
+| PATCH | `/api/v1/incidents/{incident_id}` | Authority JWT | Update status. Emits `incident_updated` WS event. |
+| GET | `/api/v1/incidents/{incident_id}/recommendations` | Authority JWT | AI boundary stub. Returns recommended resources. |
+| POST | `/api/v1/incidents/{incident_id}/dispatch` | Authority JWT | Creates DispatchRecord, updates Resource qty safely (row-locked). Emits WS events. |
+| POST | `/api/v1/incidents/{incident_id}/refresh-summary` | Authority JWT | AI boundary stub. |
+| GET | `/api/v1/resources` | Authority JWT | Query params: `category`, `status`, `district` |
+| GET | `/api/v1/resources/{resource_id}` | Authority JWT | Resource detail |
+| POST | `/api/v1/resources` | Authority JWT (Admin only) | Creates new mock IDRN resource. |
+| PATCH | `/api/v1/resources/{resource_id}` | Authority JWT | Update status/quantity. Emits `resource_updated` WS event. |
+| GET | `/api/v1/situation-brief` | Authority JWT | AI boundary stub. Returns situation brief text. |
+| POST | `/api/v1/situation-brief/refresh` | Authority JWT (Admin only) | AI boundary stub. Triggers refresh. |
+| POST | `/api/v1/optimize/allocate` | Authority JWT | OR-Tools boundary stub. Returns allocation plan. |
+
+---
+
+### Dispatch Request / Response
+
+**POST** `/api/v1/incidents/{incident_id}/dispatch`
+
+**Request:**
+```json
+{
+  "resource_id": "string",
+  "quantity": 2
+}
+```
+
+**Response:** (HTTP 201 Created)
+```json
+{
+  "dispatch_id": "string",
+  "incident_id": "string",
+  "resource_id": "string",
+  "quantity_dispatched": 2,
+  "dispatched_by": "string",
+  "dispatched_at": "2026-08-12T12:00:00Z",
+  "eta_minutes": null,
+  "status": "dispatched"
+}
+```
+
+---
+
+### WebSocket
+
+**WS** `/ws/incidents?token=<authority_access_token>`
+
+- **Authentication:** Query parameter `?token=<authority_access_token>`. Token validated as authority JWT. Connection rejected with code 1008 if missing or invalid.
+- **Events pushed by server:**
+  - `incident_created` — new incident formed from SOS cluster
+  - `incident_updated` — incident status changed
+  - `incident_dispatched` — dispatch record created
+  - `resource_updated` — resource quantity/status changed
+  - `situation_brief_updated` — situation brief refreshed (pending AI integration)
+
+**Event format:**
+```json
+{
+  "event": "incident_updated",
+  "data": { ... }
+}
+```
