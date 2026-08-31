@@ -1,0 +1,2020 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SIH Disaster Response API",
+    "description": "Disaster Response Coordination Platform \u2014 Backend API\n\n**SIH 2026** \u00b7 Component D \u2014 Backend Core\n\nThis Swagger UI is the live contract that Android, Dashboard, and AI/Optimizer teams build against. Do not change endpoint paths, request fields, or response fields without coordinating with all affected teams.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "misc"
+        ],
+        "summary": "Health check",
+        "description": "Returns HTTP 200 when the API is running.\nAlso verifies the database connection and reports PostGIS availability.\n\nUsed by Docker healthchecks and monitoring tools.",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Service liveness and DB connectivity status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Api V1 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/stats/summary": {
+      "get": {
+        "tags": [
+          "misc"
+        ],
+        "summary": "Aggregated incident and resource statistics",
+        "operationId": "stats_summary_api_v1_stats_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/device/register": {
+      "post": {
+        "tags": [
+          "auth",
+          "auth"
+        ],
+        "summary": "Register Device",
+        "operationId": "register_device_api_v1_auth_device_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceRegisterResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/authority/login": {
+      "post": {
+        "tags": [
+          "auth",
+          "auth"
+        ],
+        "summary": "Authority Login",
+        "operationId": "authority_login_api_v1_auth_authority_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorityLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorityLoginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/authority/refresh": {
+      "post": {
+        "tags": [
+          "auth",
+          "auth"
+        ],
+        "summary": "Authority Refresh",
+        "operationId": "authority_refresh_api_v1_auth_authority_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthorityRefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorityRefreshResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sos/batch": {
+      "post": {
+        "tags": [
+          "sos",
+          "sos"
+        ],
+        "summary": "Upload Sos Batch",
+        "operationId": "upload_sos_batch_api_v1_sos_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchUpload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sos/{uuid}/status": {
+      "get": {
+        "tags": [
+          "sos",
+          "sos"
+        ],
+        "summary": "Get Sos Status",
+        "operationId": "get_sos_status_api_v1_sos__uuid__status_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SOSStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents": {
+      "get": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "List Incidents",
+        "operationId": "list_incidents_api_v1_incidents_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "bbox",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bbox"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "title": "Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedIncidentsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}": {
+      "get": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Get Incident",
+        "operationId": "get_incident_api_v1_incidents__incident_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Update Incident",
+        "operationId": "update_incident_api_v1_incidents__incident_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentStatusUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}/recommendations": {
+      "get": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Get Recommendations",
+        "operationId": "get_recommendations_api_v1_incidents__incident_id__recommendations_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}/dispatch": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Create Dispatch",
+        "operationId": "create_dispatch_api_v1_incidents__incident_id__dispatch_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DispatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispatchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/incidents/{incident_id}/refresh-summary": {
+      "post": {
+        "tags": [
+          "incidents"
+        ],
+        "summary": "Refresh Summary",
+        "description": "Integration boundary stub for AI-based summary refresh.\nComponent E is responsible for the actual implementation.",
+        "operationId": "refresh_summary_api_v1_incidents__incident_id__refresh_summary_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "incident_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Incident Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/resources": {
+      "get": {
+        "tags": [
+          "resources"
+        ],
+        "summary": "Get Resources",
+        "description": "List resources with optional filtering.",
+        "operationId": "get_resources_api_v1_resources_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "district",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "District"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResourceResponse"
+                  },
+                  "title": "Response Get Resources Api V1 Resources Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "resources"
+        ],
+        "summary": "Create Resource",
+        "description": "Create a new mock IDRN resource. Admin only.",
+        "operationId": "create_resource_api_v1_resources_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/resources/{resource_id}": {
+      "get": {
+        "tags": [
+          "resources"
+        ],
+        "summary": "Get Resource",
+        "operationId": "get_resource_api_v1_resources__resource_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "resource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Resource Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "resources"
+        ],
+        "summary": "Update Resource",
+        "description": "Update a resource (e.g. quantity or status). Authority only.",
+        "operationId": "update_resource_api_v1_resources__resource_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "resource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Resource Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResourceUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/situation-brief": {
+      "get": {
+        "tags": [
+          "optimizer"
+        ],
+        "summary": "Get Situation Brief",
+        "description": "STUB: Returns the current situation brief.\nComponent E is responsible for the actual Gemini implementation.",
+        "operationId": "get_situation_brief_api_v1_situation_brief_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/situation-brief/refresh": {
+      "post": {
+        "tags": [
+          "optimizer"
+        ],
+        "summary": "Refresh Situation Brief",
+        "description": "STUB: Refreshes the situation brief.\nComponent E is responsible for the actual Gemini implementation.",
+        "operationId": "refresh_situation_brief_api_v1_situation_brief_refresh_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/optimize/allocate": {
+      "post": {
+        "tags": [
+          "optimizer"
+        ],
+        "summary": "Allocate Resources",
+        "description": "STUB: Requests resource allocation.\nComponent E is responsible for the actual OR-Tools implementation.",
+        "operationId": "allocate_resources_api_v1_optimize_allocate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AllocateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActiveIncidents": {
+        "properties": {
+          "critical": {
+            "type": "integer",
+            "title": "Critical"
+          },
+          "high": {
+            "type": "integer",
+            "title": "High"
+          },
+          "medium": {
+            "type": "integer",
+            "title": "Medium"
+          },
+          "low": {
+            "type": "integer",
+            "title": "Low"
+          }
+        },
+        "type": "object",
+        "required": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
+        "title": "ActiveIncidents"
+      },
+      "AllocateRequest": {
+        "properties": {
+          "incident_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Ids"
+          },
+          "constraints": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Constraints"
+          }
+        },
+        "type": "object",
+        "title": "AllocateRequest"
+      },
+      "AuthorityLoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "AuthorityLoginRequest"
+      },
+      "AuthorityLoginResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AuthorityResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "user"
+        ],
+        "title": "AuthorityLoginResponse"
+      },
+      "AuthorityRefreshRequest": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "AuthorityRefreshRequest"
+      },
+      "AuthorityRefreshResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "AuthorityRefreshResponse"
+      },
+      "AuthorityResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/AuthorityRole"
+          },
+          "agency": {
+            "type": "string",
+            "title": "Agency"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "name",
+          "role",
+          "agency",
+          "email"
+        ],
+        "title": "AuthorityResponse"
+      },
+      "AuthorityRole": {
+        "type": "string",
+        "enum": [
+          "DDMA",
+          "police",
+          "fire",
+          "ambulance",
+          "NDRF",
+          "SDRF",
+          "admin"
+        ],
+        "title": "AuthorityRole"
+      },
+      "BatchResponse": {
+        "properties": {
+          "accepted_uuids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Accepted Uuids"
+          },
+          "duplicate_uuids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Duplicate Uuids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted_uuids",
+          "duplicate_uuids"
+        ],
+        "title": "BatchResponse"
+      },
+      "BatchUpload": {
+        "properties": {
+          "gateway_device_id": {
+            "type": "string",
+            "title": "Gateway Device Id"
+          },
+          "gateway_location": {
+            "$ref": "#/components/schemas/app__models__sos__Location"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Uploaded At"
+          },
+          "sos_batch": {
+            "items": {
+              "$ref": "#/components/schemas/SOSRequest"
+            },
+            "type": "array",
+            "title": "Sos Batch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "gateway_device_id",
+          "gateway_location",
+          "uploaded_at",
+          "sos_batch"
+        ],
+        "title": "BatchUpload"
+      },
+      "DeviceRegisterRequest": {
+        "properties": {
+          "device_model": {
+            "type": "string",
+            "title": "Device Model"
+          },
+          "app_version": {
+            "type": "string",
+            "title": "App Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_model",
+          "app_version"
+        ],
+        "title": "DeviceRegisterRequest"
+      },
+      "DeviceRegisterResponse": {
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "title": "Device Id"
+          },
+          "device_jwt": {
+            "type": "string",
+            "title": "Device Jwt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_id",
+          "device_jwt"
+        ],
+        "title": "DeviceRegisterResponse"
+      },
+      "DispatchRequest": {
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resource_id",
+          "quantity"
+        ],
+        "title": "DispatchRequest"
+      },
+      "DispatchResponse": {
+        "properties": {
+          "dispatch_id": {
+            "type": "string",
+            "title": "Dispatch Id"
+          },
+          "incident_id": {
+            "type": "string",
+            "title": "Incident Id"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id"
+          },
+          "quantity_dispatched": {
+            "type": "integer",
+            "title": "Quantity Dispatched"
+          },
+          "dispatched_by": {
+            "type": "string",
+            "title": "Dispatched By"
+          },
+          "dispatched_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dispatched At"
+          },
+          "eta_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eta Minutes"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dispatch_id",
+          "incident_id",
+          "resource_id",
+          "quantity_dispatched",
+          "dispatched_by",
+          "dispatched_at",
+          "status"
+        ],
+        "title": "DispatchResponse"
+      },
+      "EmergencyType": {
+        "type": "string",
+        "enum": [
+          "medical",
+          "trapped",
+          "structural_collapse",
+          "flood_rescue",
+          "fire",
+          "missing_person",
+          "unspecified"
+        ],
+        "title": "EmergencyType"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IncidentFlags": {
+        "properties": {
+          "medical_emergency": {
+            "type": "boolean",
+            "title": "Medical Emergency"
+          },
+          "trapped": {
+            "type": "boolean",
+            "title": "Trapped"
+          },
+          "elderly_or_children": {
+            "type": "boolean",
+            "title": "Elderly Or Children"
+          },
+          "structural_damage": {
+            "type": "boolean",
+            "title": "Structural Damage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "medical_emergency",
+          "trapped",
+          "elderly_or_children",
+          "structural_damage"
+        ],
+        "title": "IncidentFlags"
+      },
+      "IncidentResponse": {
+        "properties": {
+          "area_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area Name"
+          },
+          "emergency_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emergency Types"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "ai_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Summary"
+          },
+          "report_count": {
+            "type": "integer",
+            "title": "Report Count"
+          },
+          "estimated_people_affected": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated People Affected"
+          },
+          "flags": {
+            "$ref": "#/components/schemas/IncidentFlags"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "recommended_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Recommendation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Resources"
+          },
+          "assigned_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Resources"
+          },
+          "incident_id": {
+            "type": "string",
+            "title": "Incident Id"
+          },
+          "cluster_id": {
+            "type": "string",
+            "title": "Cluster Id"
+          },
+          "source_sos_reports": {
+            "items": {},
+            "type": "array",
+            "title": "Source Sos Reports"
+          },
+          "location": {
+            "$ref": "#/components/schemas/app__models__sos__Location"
+          },
+          "first_reported_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Reported At"
+          },
+          "last_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "emergency_types",
+          "severity",
+          "report_count",
+          "flags",
+          "status",
+          "incident_id",
+          "cluster_id",
+          "source_sos_reports",
+          "location",
+          "first_reported_at",
+          "last_updated_at"
+        ],
+        "title": "IncidentResponse"
+      },
+      "IncidentStatusUpdate": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "IncidentStatusUpdate"
+      },
+      "PaginatedIncidentsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "title": "PaginatedIncidentsResponse"
+      },
+      "Recommendation": {
+        "properties": {
+          "resource_type": {
+            "type": "string",
+            "title": "Resource Type"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "reasoning": {
+            "type": "string",
+            "title": "Reasoning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resource_type",
+          "quantity",
+          "reasoning"
+        ],
+        "title": "Recommendation"
+      },
+      "ResourceCreate": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "medical",
+              "rescue",
+              "shelter",
+              "transport",
+              "communication"
+            ],
+            "title": "Category"
+          },
+          "sub_type": {
+            "type": "string",
+            "title": "Sub Type"
+          },
+          "custodian_agency": {
+            "type": "string",
+            "title": "Custodian Agency"
+          },
+          "quantity_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quantity Total"
+          },
+          "quantity_available": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quantity Available"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "partially_deployed",
+              "deployed",
+              "maintenance"
+            ],
+            "title": "Status"
+          },
+          "contact": {
+            "type": "string",
+            "title": "Contact"
+          },
+          "location": {
+            "$ref": "#/components/schemas/app__models__resources__Location"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "sub_type",
+          "custodian_agency",
+          "quantity_total",
+          "quantity_available",
+          "status",
+          "contact",
+          "location"
+        ],
+        "title": "ResourceCreate"
+      },
+      "ResourceResponse": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "medical",
+              "rescue",
+              "shelter",
+              "transport",
+              "communication"
+            ],
+            "title": "Category"
+          },
+          "sub_type": {
+            "type": "string",
+            "title": "Sub Type"
+          },
+          "custodian_agency": {
+            "type": "string",
+            "title": "Custodian Agency"
+          },
+          "quantity_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quantity Total"
+          },
+          "quantity_available": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Quantity Available"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "available",
+              "partially_deployed",
+              "deployed",
+              "maintenance"
+            ],
+            "title": "Status"
+          },
+          "contact": {
+            "type": "string",
+            "title": "Contact"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id"
+          },
+          "location": {
+            "$ref": "#/components/schemas/app__models__resources__Location"
+          },
+          "last_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "sub_type",
+          "custodian_agency",
+          "quantity_total",
+          "quantity_available",
+          "status",
+          "contact",
+          "resource_id",
+          "location",
+          "last_updated_at"
+        ],
+        "title": "ResourceResponse"
+      },
+      "ResourceStats": {
+        "properties": {
+          "available": {
+            "type": "integer",
+            "title": "Available"
+          },
+          "deployed": {
+            "type": "integer",
+            "title": "Deployed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "available",
+          "deployed"
+        ],
+        "title": "ResourceStats"
+      },
+      "ResourceUpdate": {
+        "properties": {
+          "quantity_available": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity Available"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "ResourceUpdate"
+      },
+      "SOSRequest": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "title": "Uuid"
+          },
+          "device_id": {
+            "type": "string",
+            "title": "Device Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "location": {
+            "$ref": "#/components/schemas/app__models__sos__Location"
+          },
+          "is_quick_sos": {
+            "type": "boolean",
+            "title": "Is Quick Sos"
+          },
+          "emergency_type": {
+            "$ref": "#/components/schemas/EmergencyType"
+          },
+          "severity_hint": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SeverityHint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "people_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "People Count"
+          },
+          "medical_snapshot": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medical Snapshot"
+          },
+          "custom_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Message"
+          },
+          "contact_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Number"
+          },
+          "relay_hop_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Relay Hop Count"
+          },
+          "last_relayed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Relayed At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SOSStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid",
+          "device_id",
+          "created_at",
+          "location",
+          "is_quick_sos",
+          "emergency_type",
+          "relay_hop_count",
+          "last_relayed_at",
+          "status"
+        ],
+        "title": "SOSRequest"
+      },
+      "SOSStatus": {
+        "type": "string",
+        "enum": [
+          "pending_local",
+          "in_relay",
+          "uploaded"
+        ],
+        "title": "SOSStatus"
+      },
+      "SOSStatusResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "SOSStatusResponse"
+      },
+      "SeverityHint": {
+        "type": "string",
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
+        "title": "SeverityHint"
+      },
+      "StatsSummaryResponse": {
+        "properties": {
+          "active_incidents": {
+            "$ref": "#/components/schemas/ActiveIncidents"
+          },
+          "total_estimated_people_affected": {
+            "type": "integer",
+            "title": "Total Estimated People Affected"
+          },
+          "resources": {
+            "$ref": "#/components/schemas/ResourceStats"
+          },
+          "new_incidents_last_15min": {
+            "type": "integer",
+            "title": "New Incidents Last 15Min"
+          }
+        },
+        "type": "object",
+        "required": [
+          "active_incidents",
+          "total_estimated_people_affected",
+          "resources",
+          "new_incidents_last_15min"
+        ],
+        "title": "StatsSummaryResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "app__models__resources__Location": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat"
+          },
+          "lng": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lng"
+          },
+          "district": {
+            "type": "string",
+            "title": "District"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lat",
+          "lng",
+          "district"
+        ],
+        "title": "Location"
+      },
+      "app__models__sos__Location": {
+        "properties": {
+          "lat": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Lat"
+          },
+          "lng": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Lng"
+          },
+          "accuracy_m": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy M"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lat",
+          "lng"
+        ],
+        "title": "Location"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

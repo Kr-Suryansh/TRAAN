@@ -1,0 +1,380 @@
+[2026-08-21 08:20:47] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:20:47] 2026-08-21 08:20:47,071 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:21:32] 2026-08-21 08:21:32,414 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:21:32] 2026-08-21 08:21:32,855 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:22:34] 2026-08-21 08:22:34,033 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:22:34] Gemini API call failed or validation error: Default value is not supported in the response schema for the Gemini API.
+[2026-08-21 08:25:02] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:25:02] 2026-08-21 08:25:02,674 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:25:03] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:25:03] 2026-08-21 08:25:03,827 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:34:59] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:35:00] 2026-08-21 08:35:00,057 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:38:04] 2026-08-21 08:38:04,219 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:39:47] 2026-08-21 08:39:47,806 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:39:47] Gemini API call failed or validation error: Default value is not supported in the response schema for the Gemini API.
+[2026-08-21 08:40:37] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:40:37] 2026-08-21 08:40:37,368 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:40:37] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:40:37] 2026-08-21 08:40:37,451 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:42:18] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:42:18] 2026-08-21 08:42:18,154 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:42:18] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:42:18] 2026-08-21 08:42:18,875 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:51:32] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:51:32] 2026-08-21 08:51:32,412 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:51:33] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:51:33] 2026-08-21 08:51:33,251 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:54:22] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:54:22] 2026-08-21 08:54:22,917 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:54:23] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:54:23] 2026-08-21 08:54:23,384 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:54:25] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:54:25] 2026-08-21 08:54:25,360 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:54:26] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:54:26] 2026-08-21 08:54:26,476 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:54:46] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:54:46] 2026-08-21 08:54:46,667 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:54:47] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:54:47] 2026-08-21 08:54:47,733 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:55:01] 2026-08-21 08:55:01,955 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:55:02] 2026-08-21 08:55:02,067 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:55:40] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:55:40] 2026-08-21 08:55:40,609 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:55:41] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:55:41] 2026-08-21 08:55:41,672 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:55:53] 2026-08-21 08:55:53,276 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:55:53] 2026-08-21 08:55:53,342 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:56:52] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:56:52] 2026-08-21 08:56:52,094 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:56:53] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:56:53] 2026-08-21 08:56:53,124 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:58:16] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:58:16] 2026-08-21 08:58:16,042 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:58:17] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:58:17] 2026-08-21 08:58:17,148 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:58:29] 2026-08-21 08:58:29,820 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:58:29] 2026-08-21 08:58:29,867 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:58:40] 2026-08-21 08:58:40,541 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:58:40] 2026-08-21 08:58:40,600 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 08:58:40] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 08:58:40] 2026-08-21 08:58:40,644 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:10:26] 2026-08-21 09:10:26,938 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:10:38] 2026-08-21 09:10:38,631 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:11:03] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:11:03] 2026-08-21 09:11:03,031 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:12:12] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:12:12] 2026-08-21 09:12:12,644 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:12:44] 2026-08-21 09:12:44,965 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:13:01] 2026-08-21 09:13:01,074 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:18:58] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:18:58] 2026-08-21 09:18:58,841 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:20:23] 2026-08-21 09:20:23,627 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:29:41] 2026-08-21 09:29:41,757 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:36:09] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:36:09] 2026-08-21 09:36:09,385 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:36:27] 2026-08-21 09:36:27,031 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:36:27] 2026-08-21 09:36:27,059 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:37:41] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:37:41] 2026-08-21 09:37:41,482 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:37:42] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:37:42] 2026-08-21 09:37:42,542 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:41:12] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:41:12] 2026-08-21 09:41:12,493 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:41:13] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:41:13] 2026-08-21 09:41:13,602 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:41:39] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:41:39] 2026-08-21 09:41:39,700 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:41:39] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:41:39] 2026-08-21 09:41:39,744 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:41:39] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:41:39] 2026-08-21 09:41:39,795 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:41:39] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:41:39] 2026-08-21 09:41:39,836 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:41:40] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:41:40] 2026-08-21 09:41:40,754 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:41:58] 2026-08-21 09:41:58,620 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:41:58] 2026-08-21 09:41:58,644 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:42:10] 2026-08-21 09:42:10,961 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:42:10] 2026-08-21 09:42:10,984 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:42:11] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 09:42:11] 2026-08-21 09:42:11,011 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 09:48:13] 2026-08-21 09:48:13,225 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:02:22] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 10:02:22] 2026-08-21 10:02:22,852 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:02:48] 2026-08-21 10:02:48,912 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:02:48] 2026-08-21 10:02:48,941 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:02:50] 2026-08-21 10:02:50,335 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:02:50] Gemini API call failed or validation error: Default value is not supported in the response schema for the Gemini API.
+[2026-08-21 10:03:41] 2026-08-21 10:03:41,678 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:03:41] 2026-08-21 10:03:41,753 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:03:41] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 10:03:41] 2026-08-21 10:03:41,792 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:03:41] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 10:03:41] 2026-08-21 10:03:41,813 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:04:05] 2026-08-21 10:04:05,563 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:04:05] 2026-08-21 10:04:05,595 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:04:05] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 10:04:05] 2026-08-21 10:04:05,630 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:04:05] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 10:04:05] 2026-08-21 10:04:05,655 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:05:44] 2026-08-21 10:05:44,677 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:05:44] 2026-08-21 10:05:44,697 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:06:04] 2026-08-21 10:06:04,818 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:06:04] Gemini API call failed or validation error: Default value is not supported in the response schema for the Gemini API.
+[2026-08-21 10:12:37] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 10:12:37] 2026-08-21 10:12:37,472 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:12:38] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 10:12:38] 2026-08-21 10:12:38,452 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:12:44] 2026-08-21 10:12:44,659 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:12:44] 2026-08-21 10:12:44,677 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:12:45] 2026-08-21 10:12:45,705 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:12:45] Gemini API call failed or validation error: Default value is not supported in the response schema for the Gemini API.
+[2026-08-21 10:15:46] 2026-08-21 10:15:46,272 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:15:46] Gemini API call failed or validation error: Default value is not supported in the response schema for the Gemini API.
+[2026-08-21 10:19:58] 2026-08-21 10:19:58,330 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 10:31:27] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 10:31:27] 2026-08-21 10:31:27,507 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 16:41:24] 2026-08-21 16:41:24,893 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 16:58:45] 2026-08-21 16:58:45,107 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 16:58:48] 2026-08-21 16:58:48,337 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 16:59:05] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 16:59:05] 2026-08-21 16:59:05,004 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 16:59:05] 2026-08-21 16:59:05,024 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 16:59:05] Gemini API call failed or validation error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check 
+[2026-08-21 16:59:08] 2026-08-21 16:59:08,862 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 17:05:38] 2026-08-21 17:05:38,249 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 17:05:38] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-21 17:15:39] 2026-08-21 17:15:39,370 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 17:15:39] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-21 17:25:40] 2026-08-21 17:25:40,164 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 17:25:40] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-21 17:39:44] 2026-08-21 17:39:44,648 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 17:39:44] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-21 17:49:45] 2026-08-21 17:49:45,442 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 17:49:45] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-21 18:02:45] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-21 18:02:45] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-21 18:10:57] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 18:10:57] 2026-08-21 18:10:57,439 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 18:11:34] 2026-08-21 18:11:34,415 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 18:11:34] 2026-08-21 18:11:34,433 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 18:11:36] 2026-08-21 18:11:36,038 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 18:11:36] Gemini API call failed or validation error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check 
+[2026-08-21 18:12:01] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-21 18:12:01] 2026-08-21 18:12:01,563 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-21 18:12:01] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:33:45] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 04:33:45] 2026-08-22 04:33:45,468 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:34:07] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 04:34:07] 2026-08-22 04:34:07,541 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:34:08] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 04:34:08] 2026-08-22 04:34:08,541 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:34:08] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:34:08] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:34:08] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:34:08] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:34:08] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:34:08] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:50:43] 2026-08-22 04:50:43,171 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:53:21] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 04:53:21] 2026-08-22 04:53:21,119 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:53:41] 2026-08-22 04:53:41,230 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:53:41] 2026-08-22 04:53:41,245 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:53:47] 2026-08-22 04:53:47,406 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:53:47] Gemini API call failed or validation error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check 
+[2026-08-22 04:54:23] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 04:54:23] 2026-08-22 04:54:23,653 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:54:24] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 04:54:24] 2026-08-22 04:54:24,681 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:54:24] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:54:24] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] 2026-08-22 04:56:19,483 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:56:19] 2026-08-22 04:56:19,509 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 04:56:19] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 04:56:19] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 06:05:30] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 06:05:30] 2026-08-22 06:05:30,034 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 06:05:30] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 06:05:30] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 06:11:37] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 06:11:37] 2026-08-22 06:11:37,656 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 06:11:37] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 06:11:37] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 06:11:37] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 06:11:37] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 06:11:37] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 06:11:37] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 06:11:37] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 06:11:37] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 06:11:37] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 06:11:37] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 06:11:37] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 06:11:37] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 06:11:37] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 06:11:37] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 06:46:56] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 06:46:56] 2026-08-22 06:46:56,643 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 06:46:56] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 06:46:56] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 06:51:59] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 06:51:59] 2026-08-22 06:51:59,588 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 06:54:32] 2026-08-22 06:54:32,990 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 06:54:33] 2026-08-22 06:54:33,016 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 06:54:40] 2026-08-22 06:54:40,787 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 06:54:40] Gemini API call failed or validation error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check 
+[2026-08-22 06:54:41] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 06:54:41] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 07:00:28] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 07:00:28] 2026-08-22 07:00:28,243 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:01:22] 2026-08-22 07:01:22,151 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:01:22] 2026-08-22 07:01:22,239 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:01:50] 2026-08-22 07:01:50,404 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:01:55] 2026-08-22 07:01:55,870 INFO sqlalchemy.engine.Engine UPDATE incident SET ai_summary=$1::VARCHAR, flags=$2::JSONB, last_updated_at=$3::TIMESTAMP WITH 
+[2026-08-22 07:01:55] 2026-08-22 07:01:55,884 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:01:55] 2026-08-22 07:01:55,889 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:02:37] 2026-08-22 07:02:37,374 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:02:44] 2026-08-22 07:02:44,502 INFO sqlalchemy.engine.Engine UPDATE incident SET ai_summary=$1::VARCHAR, last_updated_at=$2::TIMESTAMP WITH TIME ZONE WHERE i
+[2026-08-22 07:02:44] 2026-08-22 07:02:44,512 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:02:44] 2026-08-22 07:02:44,514 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:03:15] 2026-08-22 07:03:15,754 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:03:15] 2026-08-22 07:03:15,791 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:05:06] 2026-08-22 07:05:06,221 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:05:14] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 07:05:14] 2026-08-22 07:05:14,895 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:06:24] 2026-08-22 07:06:24,666 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:06:24] 2026-08-22 07:06:24,689 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:06:39] 2026-08-22 07:06:39,259 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:06:45] 2026-08-22 07:06:45,626 INFO sqlalchemy.engine.Engine UPDATE incident SET ai_summary=$1::VARCHAR, last_updated_at=$2::TIMESTAMP WITH TIME ZONE WHERE i
+[2026-08-22 07:06:45] 2026-08-22 07:06:45,644 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:06:45] 2026-08-22 07:06:45,648 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:18:09] 2026-08-22 07:18:09,518 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:18:14] 2026-08-22 07:18:14,949 INFO sqlalchemy.engine.Engine UPDATE incident SET ai_summary=$1::VARCHAR, last_updated_at=$2::TIMESTAMP WITH TIME ZONE WHERE i
+[2026-08-22 07:18:14] 2026-08-22 07:18:14,956 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:18:14] 2026-08-22 07:18:14,959 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:18:28] 2026-08-22 07:18:28,479 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:18:28] 2026-08-22 07:18:28,485 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:18:28] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 07:18:28] 2026-08-22 07:18:28,499 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:19:16] 2026-08-22 07:19:16,671 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:19:16] 2026-08-22 07:19:16,683 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:37:04] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 07:37:04] 2026-08-22 07:37:04,219 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:37:34] 2026-08-22 07:37:34,623 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:38:08] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 07:38:08] 2026-08-22 07:38:08,511 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:38:09] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 07:38:09] 2026-08-22 07:38:09,633 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:46:15] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 07:46:15] 2026-08-22 07:46:15,802 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:46:16] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 07:46:16] 2026-08-22 07:46:16,863 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 07:46:16] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 07:46:16] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 07:46:16] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 07:46:16] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 07:46:16] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 07:46:16] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 07:46:16] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 07:46:16] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 07:46:16] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 07:46:16] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 07:46:16] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 07:46:16] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:45:42] 2026-08-22 08:45:42,092 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:45:42] 2026-08-22 08:45:42,110 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:45:42] Gemini API call failed or validation error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check 
+[2026-08-22 08:45:49] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 08:45:49] 2026-08-22 08:45:49,691 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:45:49] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:46:37] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 08:46:37] 2026-08-22 08:46:37,237 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:47:08] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:47:12] 2026-08-22 08:47:12,455 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:47:12] 2026-08-22 08:47:12,460 INFO sqlalchemy.engine.Engine INSERT INTO incident (incident_id, cluster_id, source_sos_uuids, location, area_name, emergency_
+[2026-08-22 08:47:12] 2026-08-22 08:47:12,467 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:47:12] Gemini API call failed or validation error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check 
+[2026-08-22 08:47:43] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:48:07] 2026-08-22 08:48:07,594 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:48:07] 2026-08-22 08:48:07,602 INFO sqlalchemy.engine.Engine INSERT INTO incident (incident_id, cluster_id, source_sos_uuids, location, area_name, emergency_
+[2026-08-22 08:48:07] 2026-08-22 08:48:07,617 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:48:07] Gemini API call failed or validation error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check 
+[2026-08-22 08:51:51] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 08:51:51] 2026-08-22 08:51:51,568 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:03] 2026-08-22 08:52:03,640 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:03] 2026-08-22 08:52:03,657 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:26] 2026-08-22 08:52:26,478 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:26] Gemini API call failed or validation error: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check 
+[2026-08-22 08:52:31] 2026-08-22 08:52:31,714 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:31] 2026-08-22 08:52:31,740 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:35] 2026-08-22 08:52:35,344 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:35] 2026-08-22 08:52:35,369 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:37] 2026-08-22 08:52:37,983 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:37] 2026-08-22 08:52:37,997 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:43] 2026-08-22 08:52:43,169 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:43] 2026-08-22 08:52:43,182 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:43] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:48] 2026-08-22 08:52:48,033 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:48] 2026-08-22 08:52:48,043 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:50] 2026-08-22 08:52:50,694 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:50] 2026-08-22 08:52:50,711 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:57] 2026-08-22 08:52:57,835 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:57] 2026-08-22 08:52:57,865 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 08:52:57] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 08:52:57] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current
+[2026-08-22 11:12:16] FROM (SELECT incident.incident_id AS incident_id, incident.cluster_id AS cluster_id, incident.source_sos_uuids AS source_sos_uuids, incident.location 
+[2026-08-22 11:12:16] 2026-08-22 11:12:16,677 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 11:12:33] 2026-08-22 11:12:33,589 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 11:12:33] 2026-08-22 11:12:33,612 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 11:12:35] 2026-08-22 11:12:35,512 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 11:12:43] 2026-08-22 11:12:43,761 INFO sqlalchemy.engine.Engine UPDATE incident SET ai_summary=$1::VARCHAR, flags=$2::JSONB, last_updated_at=$3::TIMESTAMP WITH 
+[2026-08-22 11:12:43] 2026-08-22 11:12:43,774 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 11:12:43] 2026-08-22 11:12:43,777 INFO sqlalchemy.engine.Engine SELECT incident.incident_id, incident.cluster_id, incident.source_sos_uuids, ST_AsEWKB(incident.
+[2026-08-22 11:12:43] Failed to generate situation brief with Gemini: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please ch
+[2026-08-22 11:12:43] Preserving existing valid cached brief following Gemini failure (429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current

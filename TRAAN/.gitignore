@@ -1,0 +1,38 @@
+# Gradle
+.gradle/
+**/.gradle/
+
+# Build output
+build/
+**/build/
+
+# Local Android configuration
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Kotlin
+.kotlin/
+
+# Generated APKs
+*.apk
+*.aab
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Preventative patterns: credentials / signing / cloud config
+*.jks
+*.keystore
+*.p12
+*.pem
+signing.properties
+.env
+.env.*
+secrets.properties
+local.json
+google-services.json
+GoogleService-Info.plist
